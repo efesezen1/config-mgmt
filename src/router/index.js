@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
+import { getCurrentUser } from '../utils/getCurrentUser'
 const routes = [
    {
       path: '/',
@@ -15,19 +16,6 @@ const routes = [
       component: () => import('../views/SignInView.vue'),
    },
 ]
-
-const getCurrentUser = () => {
-   return new Promise((resolve, reject) => {
-      const removeListener = onAuthStateChanged(
-         getAuth(),
-         (user) => {
-            removeListener()
-            resolve(user)
-         },
-         reject
-      )
-   })
-}
 
 const router = createRouter({
    history: createWebHistory(import.meta.env.BASE_URL),

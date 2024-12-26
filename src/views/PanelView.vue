@@ -1,9 +1,12 @@
 <template>
-   <div>panel view</div>
+   <div class="card">
+      <Navbar />
+   </div>
 </template>
 
 <script setup>
 
+import Navbar from '../components/Navbar.vue'
 </script>
 
-<style lang="scss" scoped></style>
+<style scoped></style>
