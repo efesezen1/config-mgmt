@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 .signin-input {
-   @apply p-4 border-2 bg-transparent backdrop-brightness-150 text-white border-slate-700 focus:border-slate-600;
+   @apply p-4 border-2 bg-transparent backdrop-brightness-150 text-white border-slate-700 focus:border-slate-600 active:border-rose-500;
 }
 
 .flex-center-col {
