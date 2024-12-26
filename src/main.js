@@ -4,7 +4,15 @@ import App from './App.vue'
 import router from './router'
 import 'primeicons/primeicons.css'
 import './config/firebase'
-import { PrimeVue, Aura, Menu, Image, Button } from './config/primevue'
+import {
+   PrimeVue,
+   Aura,
+   DataTable,
+   Column,
+   ColumnGroup,
+   Row,
+   InputText
+} from './config/primevue'
 
 const app = createApp(App)
 app.use(router)
@@ -13,7 +21,9 @@ app.use(router)
          preset: Aura,
       },
    })
-   .component('Image', Image)
-   .component('Button', Button)
-   .component('Menu', Menu)
+   .component('DataTable', DataTable)
+   .component('Column', Column)
+   .component('ColumnGroup', ColumnGroup)
+   .component('Row', Row)
+   .component('InputText', InputText)
    .mount('#app')
