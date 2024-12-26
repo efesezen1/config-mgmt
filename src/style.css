@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.signin-input{
+  @apply p-4 border-2  w-3/4 bg-transparent backdrop-brightness-150 text-white border-slate-700 focus:border-slate-600
+}
+
+.flex-center-col{
+  @apply flex justify-center items-center flex-col
+}
