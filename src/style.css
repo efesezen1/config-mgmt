@@ -2,10 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-.signin-input{
-  @apply p-4 border-2  w-3/4 bg-transparent backdrop-brightness-150 text-white border-slate-700 focus:border-slate-600
+.signin-input {
+   @apply p-4 border-2 bg-transparent backdrop-brightness-150 text-white border-slate-700 focus:border-slate-600;
 }
 
-.flex-center-col{
-  @apply flex justify-center items-center flex-col
+.flex-center-col {
+   @apply flex justify-center items-center flex-col;
+}
+.signin-dimensions {
+   @apply w-3/4 md:w-7/12 lg:w-1/2 xl:w-1/3;
 }
