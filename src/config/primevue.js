@@ -6,5 +6,5 @@ import Column from 'primevue/column'
 import ColumnGroup from 'primevue/columngroup' // optional
 import Row from 'primevue/row' // optional
 import InputText from 'primevue/inputtext'
-
-export { PrimeVue, Aura, DataTable, Column, ColumnGroup, Row, InputText }
+import Button from 'primevue/button'
+export { PrimeVue, Aura, DataTable, Column, ColumnGroup, Row, InputText, Button }
