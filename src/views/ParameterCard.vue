@@ -133,6 +133,15 @@ watch(isEditing, (x) => {
   }
 })
 
+watch(showDrawer, (visible) => {
+  if (visible && !isEditing.value) {
+    editingParameter.value = {key: '', value: '', description: ''}
+  } else if (!visible) {
+    isEditing.value = false
+    editingParameter.value = {key: '', value: '', description: ''}
+  }
+})
+
 const onEdit = (parameter) => {
   isEditing.value = true
   editingParameter.value = {...parameter}
@@ -147,15 +156,11 @@ const handleSubmit = () => {
   if (isEditing.value) {
     emit('edit', {...editingParameter.value})
   } else {
+    newParameterModel.value = {...editingParameter.value}
     emit('add')
   }
   showDrawer.value = false
   isEditing.value = false
   editingParameter.value = {key: '', value: '', description: ''}
-}
-
-const addAndCloseDrawer = () => {
-  emit('add')
-  showDrawer.value = false
 }
 </script>
