@@ -8,10 +8,7 @@
           class="bg-[#1a1d2d] rounded-lg p-4 flex flex-col gap-4"
       >
         <div class="flex-1">
-          <div class="mb-3">
-            <span class="text-[#a9b7d0] text-sm">Parameter Key:</span>
-            <span class="text-white text-base ml-2">{{ parameter.key }}</span>
-          </div>
+
           <div class="flex flex-col gap-2">
             <div 
               v-for="col in columns" 
