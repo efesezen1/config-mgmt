@@ -12,7 +12,9 @@ import {
     ColumnGroup,
     Row,
     InputText,
-    Button
+    Button,
+    Drawer
+
 } from './config/primevue'
 
 const app = createApp(App)
@@ -28,4 +30,5 @@ app.use(router)
     .component('Row', Row)
     .component('InputText', InputText)
     .component('Button', Button)
+    .component('Drawer', Drawer)
     .mount('#app')

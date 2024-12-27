@@ -1,6 +1,7 @@
 <template>
   <div class="table-container p-5">
     <DataTable
+        v-if="parameters.length > 0"
         :value="parameters"
         v-model:editingRows="editingRows"
         dataKey="key"
@@ -60,7 +61,7 @@
         </template>
       </Column>
     </DataTable>
-
+    <div v-else class="text-center">No items exist.</div>
     <div class="mt-5 bg-[#1a1d2d] p-4 rounded-lg">
       <div class="flex gap-3 items-center">
         <input
@@ -74,7 +75,7 @@
             v-model="newParameterModel.description"
             placeholder="New Description"
         />
-        <Button label="Add" icon="pi pi-plus" size="large" severity="warn" @click="$emit('add', newParameterModel)" />
+        <Button label="Add" icon="pi pi-plus" size="large" @click="$emit('add', newParameterModel)"/>
 
       </div>
     </div>

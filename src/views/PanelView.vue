@@ -1,15 +1,8 @@
 <template>
   <div>
     <Navbar/>
-    <ParameterTable
-
-        :parameters="parameters"
-        v-model:newParameter="newParameter"
-        @edit="onRowEditSave"
-        @delete="deleteParameter"
-        @add="addParameter"
-    />
-    <ParameterCard
+    <component
+        :is="currentComponent"
         :parameters="parameters"
         v-model:newParameter="newParameter"
         @edit="onRowEditSave"
@@ -20,12 +13,38 @@
 </template>
 
 <script setup>
-import {ref, watch} from 'vue'
-import Navbar from '../components/Navbar.vue'
+import {ref, watch, onMounted, onUnmounted, computed} from 'vue'
+import throttle from "../utils/throttle.js";
 import ParameterTable from './ParameterTable.vue'
 import ParameterCard from './ParameterCard.vue'
-import Button from 'primevue/button'
+import Navbar from '../components/Navbar.vue'
 
+const BREAKPOINT_MD = 768 // Standard medium breakpoint
+
+const screenWidth = ref(window.innerWidth)
+
+const currentComponent = computed(() => {
+  return screenWidth.value >= BREAKPOINT_MD ? ParameterTable : ParameterCard
+})
+
+const handleResize = throttle(() => {
+  screenWidth.value = window.innerWidth
+}, 200) // 200ms throttle delay
+
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize)
+})
+
+// Cleanup
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+})
+
+// // Watch screen width changes
+// watch(screenWidth, (newWidth) => {
+//   console.log('Screen width changed:', newWidth)
+// })
 
 const parameters = ref([
   {
@@ -99,4 +118,3 @@ const addParameter = () => {
   }
 }
 </script>
-
