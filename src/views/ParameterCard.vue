@@ -57,18 +57,10 @@
         <div class="p-4">
           <div class="flex flex-col gap-3">
             <input
-                v-model="editingParameter.key"
-                placeholder="New Parameter"
-                class="input-style rounded"
-            />
-            <input
-                v-model="editingParameter.value"
-                placeholder="Value"
-                class="input-style rounded"
-            />
-            <input
-                v-model="editingParameter.description"
-                placeholder="New Description"
+                v-for="col in columns.filter(c => c.editable)"
+                :key="col.field"
+                v-model="editingParameter[col.field]"
+                :placeholder="col.inputHeader"
                 class="input-style rounded"
             />
             <Button
@@ -87,8 +79,6 @@
 
 <script setup>
 import {ref, watch} from 'vue'
-import Button from 'primevue/button'
-import Drawer from 'primevue/drawer'
 import { generateUUID } from "../utils/uuid.js";
 
 const props = defineProps({

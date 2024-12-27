@@ -74,9 +74,9 @@ const newParameter = ref({
 })
 
 const columns = [
-   { field: 'key', header: 'Parameter Key', editable: true },
-   { field: 'value', header: 'Value', editable: true },
-   { field: 'description', header: 'Description', editable: true },
+   { field: 'key', header: 'Parameter Key', editable: true, inputHeader: 'New Parameter' },
+   { field: 'value', header: 'Value', editable: true, inputHeader: 'Value' },
+   { field: 'description', header: 'Description', editable: true, inputHeader: 'New Description' },
    {
       field: 'createDate',
       header: 'Create Date',
