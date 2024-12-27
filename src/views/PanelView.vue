@@ -1,5 +1,5 @@
 <template>
-  <div class="card">
+  <div>
     <Navbar/>
     <div class="table-container">
       <DataTable
@@ -9,14 +9,7 @@
           editMode="row"
           @row-edit-save="onRowEditSave"
           removableSort
-          :pt="{
-               table: { style: 'min-width: 50rem' },
-               column: {
-                  bodycell: ({ state }) => ({
-                     style: state['d_editing'] && 'padding-top: 0.75rem; padding-bottom: 0.75rem'
-                  })
-               }
-            }"
+
       >
         <Column field="key" header="Parameter Key">
           <template #editor="{ data, field }">
@@ -41,7 +34,7 @@
               <Button @click="onRowDeleteInit(slotProps)" icon="pi pi-trash" rounded severity="secondary"
                       variant="text"/>
             </div>
-            <div v-else class="action-buttons">
+            <div v-else>
               <Button icon="pi pi-check" rounded severity="secondary"
                       variant="text" @click="onRowDeleteConfirm(slotProps)"/>
 
@@ -58,7 +51,7 @@
           <input v-model="newParameter.key" placeholder="New Parameter"/>
           <input v-model="newParameter.value" placeholder="Value"/>
           <input v-model="newParameter.description" placeholder="New Description"/>
-          <button class="add-btn" @click="addParameter">
+          <button class="button-add" @click="addParameter">
             <i class="pi pi-plus"></i>
             ADD
           </button>
@@ -159,22 +152,15 @@ const deleteParameter = (param) => {
 <style scoped>
 .table-container {
   padding: 20px;
-  color: #a9b7d0;
 }
 
-.table-container :deep(.p-datatable) {
+
+.table-container :deep(tr th) {
   background: transparent;
 }
 
-.table-container :deep(.p-datatable .p-datatable-thead tr th) {
+.table-container :deep( tr) {
   background: transparent;
-  color: #a9b7d0;
-  border-color: #2a2d3d;
-}
-
-.table-container :deep(.p-datatable .p-datatable-tbody tr) {
-  background: transparent;
-  border-color: #2a2d3d;
 }
 
 .table-container :deep(.p-datatable .p-datatable-tbody tr td) {
@@ -188,39 +174,6 @@ const deleteParameter = (param) => {
   padding: 6px 12px;
   color: #a9b7d0;
   border-radius: 4px;
-}
-
-.table-container :deep(.p-row-editor-init),
-.table-container :deep(.p-row-editor-save),
-.table-container :deep(.p-row-editor-cancel),
-.table-container :deep(.p-row-editor-delete) {
-  width: 2rem;
-  height: 2rem;
-  color: var(--text-color);
-  border: 1px solid var(--surface-border);
-  background: var(--surface-card);
-  border-radius: 4px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-}
-
-.table-container :deep(.p-row-editor-delete) {
-  &:hover {
-    background: var(--surface-hover);
-    color: var(--red-500);
-  }
-
-  i {
-    font-size: 0.875rem;
-  }
-}
-
-.action-buttons {
-  display: inline-flex;
-  gap: 0.5rem;
 }
 
 
@@ -250,7 +203,7 @@ input::placeholder {
   color: #4a5568;
 }
 
-button {
+.button-add {
   padding: 6px 16px;
   border: none;
   border-radius: 4px;
@@ -260,24 +213,16 @@ button {
   display: flex;
   align-items: center;
   gap: 4px;
-}
-
-button i {
-  font-size: 12px;
-}
-
-button:hover {
-  opacity: 0.9;
-}
-
-.add-btn {
   background-color: #06b6d4;
   color: white;
   white-space: nowrap;
 }
 
-.card {
-  background-color: #13151f;
-  min-height: 100vh;
+.button-add i {
+  font-size: 12px;
+}
+
+.button-add:hover {
+  opacity: 0.9;
 }
 </style>
