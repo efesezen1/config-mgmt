@@ -1,12 +1,12 @@
 <template>
-  <div class="table-container">
+  <div class="table-container p-5">
     <DataTable
-      :value="parameters"
-      v-model:editingRows="editingRows"
-      dataKey="key"
-      editMode="row"
-      @row-edit-save="onRowEditSave"
-      removableSort
+        :value="parameters"
+        v-model:editingRows="editingRows"
+        dataKey="key"
+        editMode="row"
+        @row-edit-save="onRowEditSave"
+        removableSort
     >
       <Column field="key" header="Parameter Key">
         <template #editor="{ data, field }">
@@ -24,57 +24,79 @@
         </template>
       </Column>
       <Column field="createDate" header="Create Date" sortable></Column>
-      <Column :rowEditor="true" style="width: 10%; min-width: 4rem" bodyStyle="text-align:center"></Column>
+      <Column
+          :rowEditor="true"
+      >
+        <template #roweditoriniticon>
+          <Button icon="pi pi-pencil" severity="info"/>
+        </template>
+      </Column>
       <Column style="width: 5rem" bodyStyle="text-align:center">
         <template #body="slotProps">
           <div v-if="!deletingRows[slotProps.index]">
-            <Button @click="onRowDeleteInit(slotProps)" icon="pi pi-trash" rounded severity="secondary"
-                    variant="text"/>
+            <Button
+                @click="onRowDeleteInit(slotProps)"
+                icon="pi pi-trash"
+                rounded
+                severity="danger"
+            />
           </div>
           <div v-else>
-            <Button icon="pi pi-check" rounded severity="secondary"
-                    variant="text" @click="onRowDeleteConfirm(slotProps)"/>
-            <Button icon="pi pi-times" rounded severity="secondary"
-                    variant="text" @click="onRowDeleteCancel(slotProps)"/>
+            <Button
+                icon="pi pi-check"
+                rounded
+                severity="secondary"
+                variant="text"
+                @click="onRowDeleteConfirm(slotProps)"
+            />
+            <Button
+                icon="pi pi-times"
+                rounded
+                severity="secondary"
+                variant="text"
+                @click="onRowDeleteCancel(slotProps)"
+            />
           </div>
         </template>
       </Column>
     </DataTable>
 
-    <div class="new-parameter-form">
-      <div class="input-group">
-        <input v-model="newParameterModel.key" placeholder="New Parameter"/>
-        <input v-model="newParameterModel.value" placeholder="Value"/>
-        <input v-model="newParameterModel.description" placeholder="New Description"/>
-        <button class="button-add" @click="$emit('add', newParameterModel)">
-          <i class="pi pi-plus"></i>
-          ADD
-        </button>
+    <div class="mt-5 bg-[#1a1d2d] p-4 rounded-lg">
+      <div class="flex gap-3 items-center">
+        <input
+            class="input-style rounded flex-1"
+            v-model="newParameterModel.key"
+            placeholder="New Parameter"
+        />
+        <input class="input-style rounded flex-1" v-model="newParameterModel.value" placeholder="Value"/>
+        <input
+            class="input-style rounded flex-1"
+            v-model="newParameterModel.description"
+            placeholder="New Description"
+        />
+        <Button label="Add" icon="pi pi-plus" size="large" severity="warn" @click="$emit('add', newParameterModel)" />
+
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
-import InputText from 'primevue/inputtext'
-import Button from 'primevue/button'
+import {ref} from 'vue'
 
 const props = defineProps({
   parameters: {
     type: Array,
-    required: true
-  }
+    required: true,
+  },
 })
 
 const newParameterModel = defineModel('newParameter', {
   default: {
     key: '',
     value: '',
-    description: ''
-  }
+    description: '',
+  },
 })
 
 const emit = defineEmits(['edit', 'delete', 'add'])
@@ -101,15 +123,13 @@ const onRowDeleteCancel = (slotProps) => {
 </script>
 
 <style scoped>
-.table-container {
-  padding: 20px;
-}
+
 
 .table-container :deep(tr th) {
   background: transparent;
 }
 
-.table-container :deep( tr) {
+.table-container :deep(tr) {
   background: transparent;
 }
 
@@ -124,54 +144,5 @@ const onRowDeleteCancel = (slotProps) => {
   padding: 6px 12px;
   color: #a9b7d0;
   border-radius: 4px;
-}
-
-.new-parameter-form {
-  margin-top: 20px;
-  background-color: #1a1d2d;
-  padding: 16px;
-  border-radius: 8px;
-}
-
-.input-group {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-input {
-  background-color: #13151f;
-  border: none;
-  padding: 8px 12px;
-  color: #a9b7d0;
-  border-radius: 4px;
-  flex: 1;
-}
-
-input::placeholder {
-  color: #4a5568;
-}
-
-.button-add {
-  padding: 6px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: opacity 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background-color: #06b6d4;
-  color: white;
-  white-space: nowrap;
-}
-
-.button-add i {
-  font-size: 12px;
-}
-
-.button-add:hover {
-  opacity: 0.9;
 }
 </style>

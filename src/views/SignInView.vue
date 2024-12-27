@@ -58,14 +58,14 @@ const signIn = () => {
                type="email"
                v-model="email"
                placeholder="E-mail address"
-               class="rounded-t-md signin-input"
+               class="rounded-t-md input-style"
             />
             <input
                ref="passwordInput"
                type="password"
                v-model="password"
                placeholder="Password"
-               class="rounded-b-md signin-input"
+               class="rounded-b-md input-style"
             />
          </div>
 

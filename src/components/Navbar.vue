@@ -1,6 +1,6 @@
 <template>
    <nav
-      class="border-b border-b-slate-800 w-full h-10 flex justify-between items-center px-5"
+      class="border-b border-b-slate-800 w-full h-10 flex justify-between items-center px-6 py-7 "
    >
       <img src="/icon.png" alt="" class="w-10 h-auto" />
       <button
