@@ -13,17 +13,13 @@
             <span class="text-white text-base ml-2">{{ parameter.key }}</span>
           </div>
           <div class="flex flex-col gap-2">
-            <div class="flex flex-col gap-1">
-              <span class="text-[#a9b7d0] text-sm">Value:</span>
-              <span class="text-white text-base">{{ parameter.value }}</span>
-            </div>
-            <div class="flex flex-col gap-1">
-              <span class="text-[#a9b7d0] text-sm">Description:</span>
-              <span class="text-white text-base">{{ parameter.description }}</span>
-            </div>
-            <div class="flex flex-col gap-1">
-              <span class="text-[#a9b7d0] text-sm">Create Date:</span>
-              <span class="text-white text-base">{{ parameter.createDate }}</span>
+            <div 
+              v-for="col in columns" 
+              :key="col.field"
+              class="flex flex-col gap-1"
+            >
+              <span class="text-[#a9b7d0] text-sm">{{ col.header }}:</span>
+              <span class="text-white text-base">{{ parameter[col.field] }}</span>
             </div>
           </div>
         </div>
@@ -100,6 +96,10 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  columns: {
+    type: Array,
+    required: true
+  }
 })
 
 const showDrawer = ref(false)

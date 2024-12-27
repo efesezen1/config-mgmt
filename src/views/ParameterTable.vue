@@ -9,25 +9,18 @@
         @row-edit-save="onRowEditSave"
         removableSort
     >
-      <Column field="key" header="Parameter Key">
-        <template #editor="{ data, field }">
-          <InputText v-model="data[field]" class="p-inputtext-sm"/>
-        </template>
-      </Column>
-      <Column field="value" header="Value">
-        <template #editor="{ data, field }">
-          <InputText v-model="data[field]" class="p-inputtext-sm"/>
-        </template>
-      </Column>
-      <Column field="description" header="Description">
-        <template #editor="{ data, field }">
-          <InputText v-model="data[field]" class="p-inputtext-sm"/>
-        </template>
-      </Column>
-      <Column field="createDate" header="Create Date" sortable></Column>
       <Column
-          :rowEditor="true"
+          v-for="col in columns"
+          :key="col.field"
+          :field="col.field"
+          :header="col.header"
+          :sortable="col.sortable"
       >
+        <template #editor="{ data, field }" v-if="col.editable">
+          <InputText v-model="data[field]" class="p-inputtext-sm"/>
+        </template>
+      </Column>
+      <Column :rowEditor="true">
         <template #roweditoriniticon>
           <Button icon="pi pi-pencil" severity="info"/>
         </template>
@@ -89,6 +82,10 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  columns:{
+    type: Array,
+    required: true
+  }
 })
 
 const newParameterModel = defineModel('newParameter', {
@@ -102,6 +99,7 @@ const newParameterModel = defineModel('newParameter', {
 const emit = defineEmits(['edit', 'delete', 'add'])
 const editingRows = ref([])
 const deletingRows = ref({})
+
 
 const onRowEditSave = (event) => {
   emit('edit', event.newData)
