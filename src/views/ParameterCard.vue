@@ -4,34 +4,26 @@
       <div
           v-if="parameters.length > 0"
           v-for="parameter in parameters"
-          :key="parameter.key"
+          :key="parameter.id"
           class="bg-[#1a1d2d] rounded-lg p-4 flex flex-col gap-4"
       >
         <div class="flex-1">
           <div class="mb-3">
             <span class="text-[#a9b7d0] text-sm">Parameter Key:</span>
-            <span class="text-white text-base ml-2">{{
-                parameter.key
-              }}</span>
+            <span class="text-white text-base ml-2">{{ parameter.key }}</span>
           </div>
           <div class="flex flex-col gap-2">
             <div class="flex flex-col gap-1">
               <span class="text-[#a9b7d0] text-sm">Value:</span>
-              <span class="text-white text-base">{{
-                  parameter.value
-                }}</span>
+              <span class="text-white text-base">{{ parameter.value }}</span>
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-[#a9b7d0] text-sm">Description:</span>
-              <span class="text-white text-base">{{
-                  parameter.description
-                }}</span>
+              <span class="text-white text-base">{{ parameter.description }}</span>
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-[#a9b7d0] text-sm">Create Date:</span>
-              <span class="text-white text-base">{{
-                  parameter.createDate
-                }}</span>
+              <span class="text-white text-base">{{ parameter.createDate }}</span>
             </div>
           </div>
         </div>
@@ -101,6 +93,7 @@
 import {ref, watch} from 'vue'
 import Button from 'primevue/button'
 import Drawer from 'primevue/drawer'
+import { generateUUID } from "../utils/uuid.js";
 
 const props = defineProps({
   parameters: {
@@ -111,6 +104,7 @@ const props = defineProps({
 
 const showDrawer = ref(false)
 const editingParameter = ref({
+  id: '',
   key: '',
   value: '',
   description: '',
@@ -129,16 +123,16 @@ const emit = defineEmits(['edit', 'delete', 'add'])
 
 watch(isEditing, (x) => {
   if (!x) {
-    editingParameter.value = {key: '', value: '', description: ''}
+    editingParameter.value = { id: '', key: '', value: '', description: '' }
   }
 })
 
 watch(showDrawer, (visible) => {
   if (visible && !isEditing.value) {
-    editingParameter.value = {key: '', value: '', description: ''}
+    editingParameter.value = { id: '', key: '', value: '', description: '' }
   } else if (!visible) {
     isEditing.value = false
-    editingParameter.value = {key: '', value: '', description: ''}
+    editingParameter.value = { id: '', key: '', value: '', description: '' }
   }
 })
 
@@ -156,11 +150,12 @@ const handleSubmit = () => {
   if (isEditing.value) {
     emit('edit', {...editingParameter.value})
   } else {
+    editingParameter.value.id = generateUUID()
     newParameterModel.value = {...editingParameter.value}
     emit('add')
   }
   showDrawer.value = false
   isEditing.value = false
-  editingParameter.value = {key: '', value: '', description: ''}
+  editingParameter.value = { id: '', key: '', value: '', description: '' }
 }
 </script>

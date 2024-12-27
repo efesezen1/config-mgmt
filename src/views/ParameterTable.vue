@@ -4,7 +4,7 @@
         v-if="parameters.length > 0"
         :value="parameters"
         v-model:editingRows="editingRows"
-        dataKey="key"
+        dataKey="id"
         editMode="row"
         @row-edit-save="onRowEditSave"
         removableSort
@@ -76,7 +76,6 @@
             placeholder="New Description"
         />
         <Button label="Add" icon="pi pi-plus" size="large" @click="$emit('add', newParameterModel)"/>
-
       </div>
     </div>
   </div>
@@ -93,15 +92,14 @@ const props = defineProps({
 })
 
 const newParameterModel = defineModel('newParameter', {
-  default: {
+  default: () => ({
     key: '',
     value: '',
     description: '',
-  },
+  }),
 })
 
 const emit = defineEmits(['edit', 'delete', 'add'])
-
 const editingRows = ref([])
 const deletingRows = ref({})
 
@@ -124,8 +122,6 @@ const onRowDeleteCancel = (slotProps) => {
 </script>
 
 <style scoped>
-
-
 .table-container :deep(tr th) {
   background: transparent;
 }
