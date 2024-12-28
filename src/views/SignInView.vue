@@ -9,8 +9,11 @@ const errMsg = ref()
 const emailInput = ref(null)
 const passwordInput = ref(null)
 const date = new Date()
+const isLoading = ref(false)
 
 const signIn = () => {
+   isLoading.value = true
+   errMsg.value = ''
    const auth = getAuth()
    signInWithEmailAndPassword(auth, email.value, password.value)
       .then(() => {
@@ -41,6 +44,9 @@ const signIn = () => {
                break
          }
       })
+      .finally(() => {
+         isLoading.value = false
+      })
 }
 </script>
 
@@ -70,10 +76,11 @@ const signIn = () => {
          </div>
 
          <button
+            :disabled="isLoading"
             type="submit"
             class="signin-dimensions btn-primary-color p-3 rounded-md transition-all duration-300"
          >
-            Sign in
+            {{ isLoading ? 'Signing in...' : 'Sign in' }}
          </button>
          <div
             class="transition-all duration-300"
