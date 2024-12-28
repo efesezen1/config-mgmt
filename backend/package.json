@@ -1,0 +1,11 @@
+{
+  "name": "case-study-backend",
+  "version": "1.0.0",
+  "description": "Codeway case study server side",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Efe Sezen",
+  "license": "ISC"
+}
