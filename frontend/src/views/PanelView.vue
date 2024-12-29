@@ -93,35 +93,57 @@ onUnmounted(() => {
    window.removeEventListener('resize', handleResize)
 })
 
-const onRowEditSave = (editedParameter) => {
-   const index = parameters.value.findIndex(
-      (param) => param.id === editedParameter.id
-   )
-   if (index !== -1) {
-      parameters.value[index] = editedParameter
+const onRowEditSave = async (editedParameter) => {
+   try {
+      const index = parameters.value.findIndex(
+         (param) => param.id === editedParameter.id
+      )
+      if (index !== -1) {
+         await $http.put(`/parameters/${editedParameter.id}`, {
+            key: editedParameter.key,
+            value: editedParameter.value,
+            description: editedParameter.description
+         })
+         parameters.value[index] = editedParameter
+      }
+   } catch (error) {
+      console.error('Error updating parameter:', error)
    }
 }
 
-const deleteParameter = (param) => {
-   parameters.value = parameters.value.filter((p) => p.id !== param.id)
+const deleteParameter = async (param) => {
+   try {
+      await $http.delete(`/parameters/${param.id}`)
+      parameters.value = parameters.value.filter((p) => p.id !== param.id)
+   } catch (error) {
+      console.error('Error deleting parameter:', error)
+   }
 }
 
-const addParameter = () => {
-   if (newParameter.value.key && newParameter.value.value) {
-      const now = new Date()
-      const createDate =
-         now.toLocaleDateString() + ' ' + now.toLocaleTimeString().slice(0, 5)
-      const newItem = {
+const addParameter = async () => {
+   try {
+      if (!newParameter.value.key || !newParameter.value.value) {
+         console.error('Key and value are required')
+         return
+      }
+
+      const parameterData = {
          id: generateUUID(),
          ...newParameter.value,
-         createDate,
+         createDate: new Date().toISOString()
       }
-      parameters.value.push(newItem)
+
+      await $http.post('/parameters', parameterData)
+      parameters.value.push(parameterData)
+      
+      // Reset the form
       newParameter.value = {
          key: '',
          value: '',
-         description: '',
+         description: ''
       }
+   } catch (error) {
+      console.error('Error adding parameter:', error)
    }
 }
 </script>
