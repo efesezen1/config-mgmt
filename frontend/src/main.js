@@ -13,8 +13,9 @@ import {
     Row,
     InputText,
     Button,
-    Drawer
-
+    Drawer,
+    ToastService,
+    Toast
 } from './config/primevue'
 
 const app = createApp(App)
@@ -24,6 +25,7 @@ app.use(router)
             preset: Aura,
         },
     })
+    .use(ToastService)
     .component('DataTable', DataTable)
     .component('Column', Column)
     .component('ColumnGroup', ColumnGroup)
@@ -31,4 +33,5 @@ app.use(router)
     .component('InputText', InputText)
     .component('Button', Button)
     .component('Drawer', Drawer)
+    .component('Toast', Toast)
     .mount('#app')

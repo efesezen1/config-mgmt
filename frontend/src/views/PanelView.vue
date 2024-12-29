@@ -30,6 +30,7 @@ import ParameterTable from './ParameterTable.vue'
 import ParameterCard from './ParameterCard.vue'
 import Navbar from '../components/Navbar.vue'
 import $http from '../api/axios'
+import { useToast } from 'primevue/usetoast'
 
 const BREAKPOINT_MD = 768 // Standard medium breakpoint
 
@@ -70,6 +71,8 @@ const columns = [
    },
 ]
 
+const toast = useToast()
+
 const handleResize = throttle(() => {
    screenWidth.value = window.innerWidth
 }, 200) // 200ms throttle delay
@@ -105,9 +108,11 @@ const onRowEditSave = async (editedParameter) => {
             description: editedParameter.description
          })
          parameters.value[index] = editedParameter
+         toast.add({ severity: 'success', summary: 'Success', detail: 'Parameter updated successfully', life: 3000 })
       }
    } catch (error) {
       console.error('Error updating parameter:', error)
+      toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to update parameter', life: 3000 })
    }
 }
 
@@ -115,15 +120,17 @@ const deleteParameter = async (param) => {
    try {
       await $http.delete(`/parameters/${param.id}`)
       parameters.value = parameters.value.filter((p) => p.id !== param.id)
+      toast.add({ severity: 'success', summary: 'Success', detail: 'Parameter deleted successfully', life: 3000 })
    } catch (error) {
       console.error('Error deleting parameter:', error)
+      toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to delete parameter', life: 3000 })
    }
 }
 
 const addParameter = async () => {
    try {
       if (!newParameter.value.key || !newParameter.value.value) {
-         console.error('Key and value are required')
+         toast.add({ severity: 'warn', summary: 'Warning', detail: 'Key and value are required', life: 3000 })
          return
       }
 
@@ -135,6 +142,7 @@ const addParameter = async () => {
 
       await $http.post('/parameters', parameterData)
       parameters.value.push(parameterData)
+      toast.add({ severity: 'success', summary: 'Success', detail: 'Parameter added successfully', life: 3000 })
       
       // Reset the form
       newParameter.value = {
@@ -144,6 +152,7 @@ const addParameter = async () => {
       }
    } catch (error) {
       console.error('Error adding parameter:', error)
+      toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to add parameter', life: 3000 })
    }
 }
 </script>
