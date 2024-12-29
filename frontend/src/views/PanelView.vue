@@ -5,9 +5,9 @@
          v-if="isLoading"
          class="flex justify-center items-center min-h-[200px]"
       >
-         <div
-            class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"
-         ></div>
+         <div class=" h-8 w-8 border-blue-500">
+            <i class="pi pi-spin pi-spinner"></i>
+         </div>
       </div>
       <component
          v-else
