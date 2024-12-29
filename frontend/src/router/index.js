@@ -23,7 +23,6 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
-   console.log(to, from, next)
    if (to.matched.some((record) => record.meta.requiresAuth)) {
       if (await getCurrentUser()) {
          console.log('User authenticated')
