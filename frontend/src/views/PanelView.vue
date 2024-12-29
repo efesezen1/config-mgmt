@@ -1,7 +1,16 @@
 <template>
    <div>
       <Navbar />
+      <div
+         v-if="isLoading"
+         class="flex justify-center items-center min-h-[200px]"
+      >
+         <div
+            class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"
+         ></div>
+      </div>
       <component
+         v-else
          :is="currentComponent"
          :parameters="parameters"
          v-model:newParameter="newParameter"
@@ -20,6 +29,7 @@ import { generateUUID } from '../utils/uuid.js'
 import ParameterTable from './ParameterTable.vue'
 import ParameterCard from './ParameterCard.vue'
 import Navbar from '../components/Navbar.vue'
+import $http from '../api/axios'
 
 const BREAKPOINT_MD = 768 // Standard medium breakpoint
 
@@ -29,43 +39,8 @@ const currentComponent = computed(() => {
    return screenWidth.value >= BREAKPOINT_MD ? ParameterTable : ParameterCard
 })
 
-const parameters = ref([
-   {
-      id: generateUUID(),
-      key: 'min_version',
-      value: '1.4.4',
-      description: 'Minimum required version of the app',
-      createDate: '10/05/2021 01:58',
-   },
-   {
-      id: generateUUID(),
-      key: 'latest_version',
-      value: '1.4.7',
-      description: 'Latest version of the app',
-      createDate: '10/05/2021 01:58',
-   },
-   {
-      id: generateUUID(),
-      key: 'pricing_tier',
-      value: 't6',
-      description: 'Pricing tier of the user',
-      createDate: '07/07/2021 11:13',
-   },
-   {
-      id: generateUUID(),
-      key: 'scroll',
-      value: '5',
-      description: 'Index of Scroll Paywall for free users.',
-      createDate: '25/08/2021 10:22',
-   },
-   {
-      id: generateUUID(),
-      key: 'scroll_limit',
-      value: '13',
-      description: 'Index of Scroll Limit Paywall for free users.',
-      createDate: '25/08/2021 10:23',
-   },
-])
+const parameters = ref([])
+const isLoading = ref(false)
 
 const newParameter = ref({
    key: '',
@@ -74,9 +49,19 @@ const newParameter = ref({
 })
 
 const columns = [
-   { field: 'key', header: 'Parameter Key', editable: true, inputHeader: 'New Parameter' },
+   {
+      field: 'key',
+      header: 'Parameter Key',
+      editable: true,
+      inputHeader: 'New Parameter',
+   },
    { field: 'value', header: 'Value', editable: true, inputHeader: 'Value' },
-   { field: 'description', header: 'Description', editable: true, inputHeader: 'New Description' },
+   {
+      field: 'description',
+      header: 'Description',
+      editable: true,
+      inputHeader: 'New Description',
+   },
    {
       field: 'createDate',
       header: 'Create Date',
@@ -89,7 +74,17 @@ const handleResize = throttle(() => {
    screenWidth.value = window.innerWidth
 }, 200) // 200ms throttle delay
 
-onMounted(() => {
+onMounted(async () => {
+   try {
+      isLoading.value = true
+      const response = await $http.get('/parameters')
+      parameters.value = response.data.parameters
+      console.log('Fetched parameters:', parameters.value)
+   } catch (error) {
+      console.error('Error fetching parameters:', error)
+   } finally {
+      isLoading.value = false
+   }
    window.addEventListener('resize', handleResize)
 })
 

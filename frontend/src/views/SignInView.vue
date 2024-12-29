@@ -17,7 +17,7 @@ const date = new Date()
 const isLoading = ref(false)
 
 const getCustomToken = async (uid) => {
-   const response = await fetch('http://localhost:3000/api/auth/token', {
+   const response = await fetch('http://localhost:3000/api/v1/auth/token', {
       method: 'POST',
       headers: {
          'Content-Type': 'application/json',
@@ -26,6 +26,8 @@ const getCustomToken = async (uid) => {
    })
 
    if (!response.ok) {
+      const error = await response.json()
+      console.error('Token error:', error)
       throw new Error('Failed to get custom token')
    }
 
@@ -55,6 +57,11 @@ const signIn = async () => {
       // Sign in with custom token
       await signInWithCustomToken(auth, customToken)
       console.log('Custom token sign in successful')
+
+      // Get the ID token
+      const idToken = await auth.currentUser.getIdToken()
+      console.log(idToken)
+      localStorage.setItem('customToken', idToken)
 
       router.push({ name: 'panel' })
    } catch (error) {
