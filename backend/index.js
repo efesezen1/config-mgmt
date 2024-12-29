@@ -72,12 +72,17 @@ v1Router.put('/parameters/:id', authenticateJWT, async (req, res) => {
       const { id } = req.params
       const { key, value, description } = req.body
 
-      // Check if parameter exists
-      const paramDoc = await db.collection(PARAMETERS_COLLECTION).doc(id).get()
+      // Find the document with matching internal id
+      const snapshot = await db.collection(PARAMETERS_COLLECTION)
+         .where('id', '==', id)
+         .get()
 
-      if (!paramDoc.exists) {
+      if (snapshot.empty) {
          return res.status(404).json({ error: 'Parameter not found' })
       }
+
+      // Get the first (and should be only) document
+      const paramDoc = snapshot.docs[0]
 
       // Update fields
       const updateData = {
@@ -88,7 +93,7 @@ v1Router.put('/parameters/:id', authenticateJWT, async (req, res) => {
          lastModifiedBy: req.user.uid,
       }
 
-      await db.collection(PARAMETERS_COLLECTION).doc(id).update(updateData)
+      await db.collection(PARAMETERS_COLLECTION).doc(paramDoc.id).update(updateData)
 
       res.json({ message: 'Parameter updated successfully' })
    } catch (error) {
