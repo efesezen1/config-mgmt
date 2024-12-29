@@ -1,7 +1,12 @@
 <script setup>
 import { ref } from 'vue'
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
+import {
+   getAuth,
+   signInWithEmailAndPassword,
+   signInWithCustomToken,
+} from 'firebase/auth'
 import { useRouter } from 'vue-router'
+
 const email = ref('')
 const password = ref('')
 const router = useRouter()
@@ -11,42 +16,72 @@ const passwordInput = ref(null)
 const date = new Date()
 const isLoading = ref(false)
 
-const signIn = () => {
+const getCustomToken = async (uid) => {
+   const response = await fetch('http://localhost:3000/api/auth/token', {
+      method: 'POST',
+      headers: {
+         'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ uid }),
+   })
+
+   if (!response.ok) {
+      throw new Error('Failed to get custom token')
+   }
+
+   const { customToken } = await response.json()
+   return customToken
+}
+
+const signIn = async () => {
    isLoading.value = true
    errMsg.value = ''
    const auth = getAuth()
-   signInWithEmailAndPassword(auth, email.value, password.value)
-      .then(() => {
-         console.log('Successfully signed in.')
-         console.log(auth.currentUser)
-         router.push({ name: 'panel' })
-      })
-      .catch((error) => {
-         console.log(error.code)
-         console.log(error.message)
-         switch (error.code) {
-            case 'auth/invalid-email':
-               errMsg.value = 'Invalid email'
-               emailInput.value.focus()
-               break
-            case 'auth/user-not-found':
-               errMsg.value = 'User not found'
-               emailInput.value.focus()
-               break
-            case 'auth/wrong-password':
-               errMsg.value = 'Wrong password'
-               password.value = ''
-               passwordInput.value.focus()
-               break
-            default:
-               errMsg.value = 'Email or password was incorrect'
-               emailInput.value.focus()
-               break
-         }
-      })
-      .finally(() => {
-         isLoading.value = false
-      })
+
+   try {
+      // First sign in with email and password
+      const userCredential = await signInWithEmailAndPassword(
+         auth,
+         email.value,
+         password.value
+      )
+      const user = userCredential.user
+      console.log('Email/Password sign in successful')
+
+      // Get custom token from our backend
+      const customToken = await getCustomToken(user.uid)
+      console.log('Got custom token', customToken)
+
+      // Sign in with custom token
+      await signInWithCustomToken(auth, customToken)
+      console.log('Custom token sign in successful')
+
+      router.push({ name: 'panel' })
+   } catch (error) {
+      console.log(error.code)
+      console.log(error.message)
+      switch (error.code) {
+         case 'auth/invalid-email':
+            errMsg.value = 'Invalid email'
+            emailInput.value.focus()
+            break
+         case 'auth/user-not-found':
+            errMsg.value = 'User not found'
+            emailInput.value.focus()
+            break
+         case 'auth/wrong-password':
+            errMsg.value = 'Wrong password'
+            password.value = ''
+            passwordInput.value.focus()
+            break
+         default:
+            errMsg.value = 'Authentication failed'
+            emailInput.value.focus()
+            break
+      }
+   } finally {
+      isLoading.value = false
+   }
 }
 </script>
 
