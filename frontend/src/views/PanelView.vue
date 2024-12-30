@@ -15,16 +15,18 @@
          :parameters="parameters"
          v-model:newParameter="newParameter"
          @edit="onRowEditSave"
+         @edit-initialized="onEditInitialized"
          @delete="deleteParameter"
          @add="addParameter"
          :columns="columns"
+         :isParameterLocked="isParameterLocked"
       />
    </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { throttle, generateUUID, localizedDate } from '../utils'
+import { throttle, generateUUID, localizedDate, getCurrentUser } from '../utils'
 import ParameterTable from './ParameterTable.vue'
 import ParameterCard from './ParameterCard.vue'
 import Navbar from '../components/Navbar.vue'
@@ -32,6 +34,7 @@ import { useToast } from 'primevue/usetoast'
 import $http from '../api/axios'
 import { collection, onSnapshot, query, doc } from 'firebase/firestore'
 import { db } from '../config/firebase'
+import { auth } from '../config/firebase'
 
 const BREAKPOINT_MD = 768 // Standard medium breakpoint
 let PARAMETERS_COLLECTION = 'parameters'
@@ -78,7 +81,7 @@ const handleResize = throttle(() => {
    screenWidth.value = window.innerWidth
 }, 200) // 200ms throttle delay
 
-// . . . INIT // REALTIME DATABASE LISTENER 
+// . . . INIT // REALTIME DATABASE LISTENER
 onMounted(() => {
    isLoading.value = true
    const q = query(collection(db, PARAMETERS_COLLECTION))
@@ -116,6 +119,31 @@ onUnmounted(() => {
    }
    window.removeEventListener('resize', handleResize)
 })
+
+const onEditInitialized = async (parameter) => {
+   try {
+      await $http.put(`/parameters/${parameter.id}/lock`)
+      toast.add({
+         severity: 'success',
+         summary: 'Success',
+         detail: 'Parameter locked successfully, you can now edit it',
+         life: 3000,
+      })
+   } catch (error) {
+      console.error('Error locking parameter:', error)
+      toast.add({
+         severity: 'error',
+         summary: 'Error',
+         detail: 'Failed to lock parameter',
+         life: 3000,
+      })
+   }
+}
+
+const isParameterLocked = (parameter) => {
+   if (!parameter || !parameter.isLocked) return false
+   return parameter.isLocked && parameter.lockedBy !== auth.currentUser?.uid
+}
 
 // . . . DATABASE OPERATIONS
 // . . . EDIT

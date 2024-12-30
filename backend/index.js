@@ -88,6 +88,7 @@ v1Router.put('/parameters/:id', authenticateJWT, async (req, res) => {
       // Get the first (and should be only) document
       const paramDoc = snapshot.docs[0]
 
+      console.log('Updating parameter:', paramDoc.data())
       // Update fields
       const updateData = {
          key: key || paramDoc.data().key,
@@ -150,6 +151,88 @@ v1Router.get('/parameters', authenticateJWT, async (req, res) => {
    } catch (error) {
       console.error('Error fetching parameters:', error)
       res.status(500).json({ error: 'Failed to fetch parameters' })
+   }
+})
+
+v1Router.put('/parameters/:id/lock', authenticateJWT, async (req, res) => {
+   try {
+      const { id } = req.params
+
+      // Find the document with matching internal id
+      const snapshot = await db
+         .collection(PARAMETERS_COLLECTION)
+         .where('id', '==', id)
+         .get()
+
+      if (snapshot.empty) {
+         return res.status(404).json({ error: 'Parameter not found' })
+      }
+
+      const paramDoc = snapshot.docs[0]
+      const paramData = paramDoc.data()
+
+      // Check if already locked by someone else
+      if (paramData.isLocked && paramData.lockedBy !== req.user.uid) {
+         return res.status(403).json({ 
+            error: 'Parameter is already locked by another user' 
+         })
+      }
+
+      // Update with lock information
+      await db
+         .collection(PARAMETERS_COLLECTION)
+         .doc(paramDoc.id)
+         .update({
+            isLocked: true,
+            lockedBy: req.user.uid,
+            lockedAt: admin.firestore.FieldValue.serverTimestamp(),
+         })
+
+      res.json({ message: 'Parameter locked successfully' })
+   } catch (error) {
+      console.error('Error locking parameter:', error)
+      res.status(500).json({ error: 'Failed to lock parameter' })
+   }
+})
+
+v1Router.put('/parameters/:id/unlock', authenticateJWT, async (req, res) => {
+   try {
+      const { id } = req.params
+
+      // Find the document with matching internal id
+      const snapshot = await db
+         .collection(PARAMETERS_COLLECTION)
+         .where('id', '==', id)
+         .get()
+
+      if (snapshot.empty) {
+         return res.status(404).json({ error: 'Parameter not found' })
+      }
+
+      const paramDoc = snapshot.docs[0]
+      const paramData = paramDoc.data()
+
+      // Only the user who locked it can unlock it
+      if (paramData.lockedBy !== req.user.uid) {
+         return res.status(403).json({ 
+            error: 'Only the user who locked the parameter can unlock it' 
+         })
+      }
+
+      // Remove lock
+      await db
+         .collection(PARAMETERS_COLLECTION)
+         .doc(paramDoc.id)
+         .update({
+            isLocked: false,
+            lockedBy: null,
+            lockedAt: null,
+         })
+
+      res.json({ message: 'Parameter unlocked successfully' })
+   } catch (error) {
+      console.error('Error unlocking parameter:', error)
+      res.status(500).json({ error: 'Failed to unlock parameter' })
    }
 })
 

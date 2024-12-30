@@ -7,6 +7,8 @@
          dataKey="id"
          editMode="row"
          @row-edit-save="onRowEditSave"
+         @row-edit-cancel="onRowEditCancel"
+         @row-edit-init="onEditInitialized"
          removableSort
       >
          <Column
@@ -24,11 +26,18 @@
             <template #roweditoriniticon>
                <Button icon="pi pi-pencil" severity="info" />
             </template>
+            <template #roweditorcancelicon>
+               <Button icon="pi pi-times" severity="danger" variant="text" />
+            </template>
+            <template #roweditorsaveicon>
+               <Button icon="pi pi-check" severity="success" variant="text" />
+            </template>
          </Column>
          <Column style="width: 5rem" bodyStyle="text-align:center">
             <template #body="slotProps">
                <div v-if="!deletingRows[slotProps.index]">
                   <Button
+                     :disabled="isParameterLocked(slotProps.data)"
                      @click="onRowDeleteInit(slotProps)"
                      icon="pi pi-trash"
                      rounded
@@ -39,14 +48,14 @@
                   <Button
                      icon="pi pi-check"
                      rounded
-                     severity="secondary"
+                     severity="success"
                      variant="text"
                      @click="onRowDeleteConfirm(slotProps)"
                   />
                   <Button
                      icon="pi pi-times"
                      rounded
-                     severity="secondary"
+                     severity="danger"
                      variant="text"
                      @click="onRowDeleteCancel(slotProps)"
                   />
@@ -58,7 +67,7 @@
       <div class="mt-5 bg-[#1a1d2d] p-4 rounded-lg">
          <div class="flex gap-3 items-center">
             <input
-               v-for="col in columns.filter(c => c.editable)"
+               v-for="col in columns.filter((c) => c.editable)"
                :key="col.field"
                class="input-style rounded flex-1"
                v-model="newParameterModel[col.field]"
@@ -87,18 +96,42 @@ const props = defineProps({
       type: Array,
       required: true,
    },
+   isParameterLocked: {
+      type: Function,
+   },
 })
 
 const newParameterModel = defineModel('newParameter', {
    default: () => ({}),
 })
 
-const emit = defineEmits(['edit', 'delete', 'add'])
+const emit = defineEmits(['edit', 'delete', 'add', 'edit-initialized'])
 const editingRows = ref([])
 const deletingRows = ref({})
 
 const onRowEditSave = (event) => {
    emit('edit', event.newData)
+}
+
+const onRowEditCancel = async (event) => {
+   try {
+      await $http.put(`/parameters/${event.data.id}/unlock`)
+      editingRows.value = editingRows.value.filter(row => row !== event.data)
+   } catch (error) {
+      console.error('Error unlocking parameter:', error)
+      toast.add({
+         severity: 'error',
+         summary: 'Error',
+         detail: 'Failed to unlock parameter',
+         life: 3000,
+      })
+   }
+}
+
+const onEditInitialized = (event) => {
+   // editingRows.value.push(event.data)
+   console.log(event.data)
+   emit('edit-initialized', event.data)
 }
 
 const onRowDeleteInit = (slotProps) => {

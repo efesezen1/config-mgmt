@@ -5,8 +5,12 @@
             v-if="parameters.length > 0"
             v-for="parameter in parameters"
             :key="parameter.id"
-            class="bg-[#1a1d2d] rounded-lg p-4 flex flex-col gap-4"
+            class="bg-[#1a1d2d] rounded-lg p-4 flex flex-col gap-4 relative"
          >
+            <div class="absolute top-5 right-5" v-show="false">
+               <i class="pi pi-lock"></i>
+            </div>
+
             <div class="flex-1">
                <div class="flex flex-col gap-2">
                   <div
@@ -113,7 +117,7 @@ const newParameterModel = defineModel('newParameter', {
    },
 })
 
-const emit = defineEmits(['edit', 'delete', 'add'])
+const emit = defineEmits(['edit', 'delete', 'add', 'edit-initialized'])
 
 watch(isEditing, (x) => {
    if (!x) {
@@ -130,11 +134,17 @@ watch(showDrawer, (visible) => {
    }
 })
 
-const onEdit = (parameter) => {
-   isEditing.value = true
-   editingParameter.value = { ...parameter }
-   showDrawer.value = true
+const onEdit = async (parameter) => {
+   emit('edit-initialized', parameter)
 }
+
+// watch(isEditedItemLocked, (isLocked) => {
+//    if (isLocked) {
+//       isEditing.value = true
+//       editingParameter.value = { ...parameter }
+//       showDrawer.value = true
+//    }
+// })
 
 const onDelete = (parameter) => {
    emit('delete', parameter)
