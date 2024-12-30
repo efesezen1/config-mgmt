@@ -55,6 +55,9 @@ v1Router.post('/parameters', authenticateJWT, async (req, res) => {
          description,
          userId: req.user.uid,
          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+         isLocked: false,
+         lockedBy: null,
+         lockedAt: null
       }
 
       console.log('Creating parameter:', paramData)
