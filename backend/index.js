@@ -53,11 +53,11 @@ v1Router.post('/parameters', authenticateJWT, async (req, res) => {
          key,
          value,
          description,
-         userId: req.user.uid,
+         createdBy: req.user.uid,
          createdAt: admin.firestore.FieldValue.serverTimestamp(),
          isLocked: false,
          lockedBy: null,
-         lockedAt: null
+         lockedAt: null,
       }
 
       console.log('Creating parameter:', paramData)
@@ -76,7 +76,8 @@ v1Router.put('/parameters/:id', authenticateJWT, async (req, res) => {
       const { key, value, description } = req.body
 
       // Find the document with matching internal id
-      const snapshot = await db.collection(PARAMETERS_COLLECTION)
+      const snapshot = await db
+         .collection(PARAMETERS_COLLECTION)
          .where('id', '==', id)
          .get()
 
@@ -96,7 +97,10 @@ v1Router.put('/parameters/:id', authenticateJWT, async (req, res) => {
          lastModifiedBy: req.user.uid,
       }
 
-      await db.collection(PARAMETERS_COLLECTION).doc(paramDoc.id).update(updateData)
+      await db
+         .collection(PARAMETERS_COLLECTION)
+         .doc(paramDoc.id)
+         .update(updateData)
 
       res.json({ message: 'Parameter updated successfully' })
    } catch (error) {

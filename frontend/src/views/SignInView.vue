@@ -60,8 +60,6 @@ const signIn = async () => {
 
       // Get the ID token
       const idToken = await auth.currentUser.getIdToken()
-      console.log(idToken)
-      localStorage.setItem('customToken', idToken)
 
       router.push({ name: 'panel' })
    } catch (error) {

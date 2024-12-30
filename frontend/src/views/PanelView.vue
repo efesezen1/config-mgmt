@@ -31,12 +31,7 @@ import ParameterCard from './ParameterCard.vue'
 import Navbar from '../components/Navbar.vue'
 import { useToast } from 'primevue/usetoast'
 import $http from '../api/axios'
-import {
-   collection,
-   onSnapshot,
-   query,
-   doc,
-} from 'firebase/firestore'
+import { collection, onSnapshot, query, doc } from 'firebase/firestore'
 import { db } from '../config/firebase'
 
 const BREAKPOINT_MD = 768 // Standard medium breakpoint
@@ -71,7 +66,7 @@ const columns = [
       inputHeader: 'New Description',
    },
    {
-      field: 'createDate',
+      field: 'createdAt',
       header: 'Create Date',
       sortable: true,
       editable: false,
@@ -182,6 +177,7 @@ const addParameter = async () => {
          key: newParameter.value.key,
          value: newParameter.value.value,
          description: newParameter.value.description || '',
+         id: generateUUID(),
       })
 
       // Reset form

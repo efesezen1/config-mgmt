@@ -14,8 +14,7 @@ $http.interceptors.request.use(
          if (auth.currentUser) {
             // Get a fresh token before each request
             const token = await auth.currentUser.getIdToken(true)
-             
-            localStorage.setItem('customToken', token)
+
             config.headers.Authorization = `Bearer ${token}`
          }
          return config
