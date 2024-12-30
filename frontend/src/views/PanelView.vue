@@ -30,16 +30,14 @@ import ParameterTable from './ParameterTable.vue'
 import ParameterCard from './ParameterCard.vue'
 import Navbar from '../components/Navbar.vue'
 import { useToast } from 'primevue/usetoast'
-import { db } from '../config/firebase'
+import $http from '../api/axios'
 import {
    collection,
    onSnapshot,
    query,
-   addDoc,
-   updateDoc,
-   deleteDoc,
    doc,
 } from 'firebase/firestore'
+import { db } from '../config/firebase'
 
 const BREAKPOINT_MD = 768 // Standard medium breakpoint
 
@@ -126,8 +124,7 @@ onUnmounted(() => {
 
 const onRowEditSave = async (editedParameter) => {
    try {
-      const paramRef = doc(db, 'parameters', editedParameter.id)
-      await updateDoc(paramRef, {
+      await $http.put(`/parameters/${editedParameter.id}`, {
          key: editedParameter.key,
          value: editedParameter.value,
          description: editedParameter.description,
@@ -151,7 +148,7 @@ const onRowEditSave = async (editedParameter) => {
 
 const deleteParameter = async (param) => {
    try {
-      await deleteDoc(doc(db, 'parameters', param.id))
+      await $http.delete(`/parameters/${param.id}`)
       toast.add({
          severity: 'success',
          summary: 'Success',
@@ -175,24 +172,16 @@ const addParameter = async () => {
          toast.add({
             severity: 'warn',
             summary: 'Warning',
-            detail: 'Key and value are required',
+            detail: 'Key and Value fields are required',
             life: 3000,
          })
          return
       }
 
-      const parameterData = {
-         ...newParameter.value,
-         id: generateUUID(),
-         createDate: new Date().toISOString(),
-      }
-
-      await addDoc(collection(db, 'parameters'), parameterData)
-      toast.add({
-         severity: 'success',
-         summary: 'Success',
-         detail: 'Parameter added successfully',
-         life: 3000,
+      await $http.post('/parameters', {
+         key: newParameter.value.key,
+         value: newParameter.value.value,
+         description: newParameter.value.description || '',
       })
 
       // Reset form
@@ -201,6 +190,13 @@ const addParameter = async () => {
          value: '',
          description: '',
       }
+
+      toast.add({
+         severity: 'success',
+         summary: 'Success',
+         detail: 'Parameter added successfully',
+         life: 3000,
+      })
    } catch (error) {
       console.error('Error adding parameter:', error)
       toast.add({
