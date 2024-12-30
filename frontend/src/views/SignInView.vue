@@ -52,14 +52,10 @@ const signIn = async () => {
 
       // Get custom token from our backend
       const customToken = await getCustomToken(user.uid)
-      console.log('Got custom token', customToken)
 
       // Sign in with custom token
       await signInWithCustomToken(auth, customToken)
       console.log('Custom token sign in successful')
-
-      // Get the ID token
-      const idToken = await auth.currentUser.getIdToken()
 
       router.push({ name: 'panel' })
    } catch (error) {

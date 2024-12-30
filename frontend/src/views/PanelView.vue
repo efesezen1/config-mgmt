@@ -23,7 +23,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { throttle, generateUUID, localizedDate } from '../utils'
 import ParameterTable from './ParameterTable.vue'
 import ParameterCard from './ParameterCard.vue'
@@ -34,22 +34,20 @@ import { collection, onSnapshot, query, doc } from 'firebase/firestore'
 import { db } from '../config/firebase'
 
 const BREAKPOINT_MD = 768 // Standard medium breakpoint
-
+let PARAMETERS_COLLECTION = 'parameters'
 const screenWidth = ref(window.innerWidth)
-
 const currentComponent = computed(() => {
    return screenWidth.value >= BREAKPOINT_MD ? ParameterTable : ParameterCard
-})
-
-const parameters = ref([])
+}) // Dynamic component
+const parameters = ref([]) // Parameters list rendered on the screen
 const isLoading = ref(false)
-
 const newParameter = ref({
    key: '',
    value: '',
    description: '',
 })
 
+// . . . EDIT DATA VIEWS BY THESE PARAMETERS
 const columns = [
    {
       field: 'key',
@@ -80,9 +78,10 @@ const handleResize = throttle(() => {
    screenWidth.value = window.innerWidth
 }, 200) // 200ms throttle delay
 
+// . . . INIT // REALTIME DATABASE LISTENER 
 onMounted(() => {
    isLoading.value = true
-   const q = query(collection(db, 'parameters'))
+   const q = query(collection(db, PARAMETERS_COLLECTION))
    unsubscribe = onSnapshot(
       q,
       (snapshot) => {
@@ -118,6 +117,8 @@ onUnmounted(() => {
    window.removeEventListener('resize', handleResize)
 })
 
+// . . . DATABASE OPERATIONS
+// . . . EDIT
 const onRowEditSave = async (editedParameter) => {
    try {
       await $http.put(`/parameters/${editedParameter.id}`, {
@@ -142,6 +143,7 @@ const onRowEditSave = async (editedParameter) => {
    }
 }
 
+// . . . DELETE
 const deleteParameter = async (param) => {
    try {
       await $http.delete(`/parameters/${param.id}`)
@@ -162,6 +164,7 @@ const deleteParameter = async (param) => {
    }
 }
 
+// . . . ADD
 const addParameter = async () => {
    try {
       if (!newParameter.value.key || !newParameter.value.value) {

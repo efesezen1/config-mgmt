@@ -5,6 +5,7 @@
       <img src="/icon.png" alt="" class="w-10 h-auto" />
       <button
          type="button"
+         id="profile_btn"
          class="btn-primary-color p-2 aspect-square w-10 rounded-full flex-center-col"
          @click="toggleMenu"
          aria-haspopup="true"
@@ -65,10 +66,9 @@ const handleLogout = async () => {
    }
 }
 
-// Close menu when clicking outside
 const closeMenuOnClickOutside = (event) => {
    const menu = document.getElementById('overlay_menu')
-   const button = event.target.closest('button')
+   const button = event.target.closest('#profile_btn')
    if (isMenuOpen.value && !menu?.contains(event.target) && !button) {
       isMenuOpen.value = false
    }

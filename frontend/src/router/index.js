@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
-import { getCurrentUser } from '../utils/getCurrentUser'
+import { getCurrentUser } from '../utils'
 const routes = [
    {
       path: '/',
@@ -32,7 +32,7 @@ router.beforeEach(async (to, from, next) => {
          next('/signin') // Redirect to login page instead of home page
       }
    } else {
-      // If user IS authenticated, then should redirected to main page
+      // If user IS authenticated, then should be redirected to main page
       if (to.path === '/signin' && (await getCurrentUser())) {
          next('/')
       } else {
