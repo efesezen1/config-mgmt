@@ -24,8 +24,7 @@
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
-import throttle from '../utils/throttle.js'
-import { generateUUID } from '../utils/uuid.js'
+import { throttle, generateUUID, localizedDate } from '../utils'
 import ParameterTable from './ParameterTable.vue'
 import ParameterCard from './ParameterCard.vue'
 import Navbar from '../components/Navbar.vue'
@@ -89,9 +88,11 @@ onMounted(() => {
       (snapshot) => {
          parameters.value = snapshot.docs.map((doc) => {
             console.log(doc.data())
+
             return {
                id: doc.id,
                ...doc.data(),
+               createdAt: localizedDate(doc.data().createdAt.toDate()),
             }
          })
          isLoading.value = false
