@@ -12,11 +12,15 @@
       <component
          v-else
          :is="currentComponent"
+         ref="componentRef"
          :parameters="parameters"
          v-model:newParameter="newParameter"
          @edit="onRowEditSave"
-         @edit-initialized="onEditInitialized"
+         @edit-initialized="(param) => lockParameter(param, 'edit')"
+         @edit-cancelled="(param) => unlockParameter(param, 'edit')"
          @delete="deleteParameter"
+         @delete-initialized="(param) => lockParameter(param, 'delete')"
+         @delete-cancelled="(param) => unlockParameter(param, 'delete')"
          @add="addParameter"
          :columns="columns"
          :isParameterLocked="isParameterLocked"
@@ -49,6 +53,7 @@ const newParameter = ref({
    value: '',
    description: '',
 })
+const componentRef = ref(null)
 
 // . . . EDIT DATA VIEWS BY THESE PARAMETERS
 const columns = [
@@ -120,15 +125,46 @@ onUnmounted(() => {
    window.removeEventListener('resize', handleResize)
 })
 
-const onEditInitialized = async (parameter) => {
+const unlockParameter = async (parameter, action) => {
+   try {
+      await $http.put(`/parameters/${parameter.id}/unlock`)
+      toast.add({
+         severity: 'info',
+         summary: 'Info',
+         detail: action === 'edit' ? 'Edit cancelled' : 'Delete cancelled',
+         life: 3000,
+      })
+   } catch (error) {
+      console.error('Error unlocking parameter:', error)
+      toast.add({
+         severity: 'error',
+         summary: 'Error',
+         detail: 'Failed to unlock parameter',
+         life: 3000,
+      })
+   }
+}
+
+const lockParameter = async (parameter, action) => {
    try {
       await $http.put(`/parameters/${parameter.id}/lock`)
       toast.add({
          severity: 'success',
          summary: 'Success',
-         detail: 'Parameter locked successfully, you can now edit it',
+         detail:
+            action === 'edit'
+               ? 'Parameter locked successfully, you can edit now.'
+               : 'Parameter locked successfully, confirm deletion.',
          life: 3000,
       })
+
+      // If we're in card view and it's an edit action, start editing
+      if (currentComponent.value === ParameterCard && action === 'edit') {
+         componentRef.value?.startEditing(parameter)
+      }
+      if (currentComponent.value === ParameterCard && action === 'delete') {
+         componentRef.value?.startDeleting(parameter)
+      }
    } catch (error) {
       console.error('Error locking parameter:', error)
       toast.add({
@@ -137,6 +173,7 @@ const onEditInitialized = async (parameter) => {
          detail: 'Failed to lock parameter',
          life: 3000,
       })
+      throw error // Re-throw to prevent editing in table view
    }
 }
 

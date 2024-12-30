@@ -7,7 +7,10 @@
             :key="parameter.id"
             class="bg-[#1a1d2d] rounded-lg p-4 flex flex-col gap-4 relative"
          >
-            <div class="absolute top-5 right-5" v-show="false">
+            <div
+               class="absolute top-5 right-5"
+               v-show="isParameterLocked(parameter)"
+            >
                <i class="pi pi-lock"></i>
             </div>
 
@@ -34,8 +37,10 @@
                   severity="info"
                   @click="onEdit(parameter)"
                   class="w-full justify-center"
+                  :disabled="isParameterLocked(parameter)"
                />
                <Button
+                  :disabled="isParameterLocked(parameter)"
                   icon="pi pi-trash"
                   label="Delete"
                   severity="danger"
@@ -82,12 +87,38 @@
                </div>
             </div>
          </Drawer>
+         <Dialog
+            v-model:visible="showDeleteModal"
+            header="Confirm Delete"
+            :modal="true"
+            class="!bg-slate-900"
+         >
+            <div class="flex flex-col gap-4">
+               <p>Are you sure you want to delete this parameter?</p>
+               <div class="flex justify-end gap-2">
+                  <Button
+                     label="No"
+                     severity="secondary"
+                     @click="cancelDelete"
+                  />
+                  <Button
+                     label="Yes"
+                     severity="danger"
+                     @click="confirmDelete"
+                  />
+               </div>
+            </div>
+         </Dialog>
       </div>
    </div>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue'
+import { useToast } from 'primevue/usetoast'
+import Dialog from 'primevue/dialog'
+
+const toast = useToast()
 
 const props = defineProps({
    parameters: {
@@ -97,6 +128,9 @@ const props = defineProps({
    columns: {
       type: Array,
       required: true,
+   },
+   isParameterLocked: {
+      type: Function,
    },
 })
 
@@ -108,6 +142,8 @@ const editingParameter = ref({
    description: '',
 })
 const isEditing = ref(false)
+const showDeleteModal = ref(false)
+const parameterToDelete = ref(null)
 
 const newParameterModel = defineModel('newParameter', {
    default: {
@@ -117,7 +153,15 @@ const newParameterModel = defineModel('newParameter', {
    },
 })
 
-const emit = defineEmits(['edit', 'delete', 'add', 'edit-initialized'])
+const emit = defineEmits([
+   'edit',
+   'delete',
+   'add',
+   'edit-initialized',
+   'edit-cancelled',
+   'delete-initialized',
+   'delete-cancelled',
+])
 
 watch(isEditing, (x) => {
    if (!x) {
@@ -128,26 +172,43 @@ watch(isEditing, (x) => {
 watch(showDrawer, (visible) => {
    if (visible && !isEditing.value) {
       editingParameter.value = { id: '', key: '', value: '', description: '' }
-   } else if (!visible) {
+   } else if (!visible && isEditing.value) {
+      emit('edit-cancelled', editingParameter.value)
       isEditing.value = false
       editingParameter.value = { id: '', key: '', value: '', description: '' }
    }
 })
 
+const startEditing = (parameter) => {
+   isEditing.value = true
+   editingParameter.value = { ...parameter }
+   showDrawer.value = true
+}
+
 const onEdit = async (parameter) => {
    emit('edit-initialized', parameter)
 }
 
-// watch(isEditedItemLocked, (isLocked) => {
-//    if (isLocked) {
-//       isEditing.value = true
-//       editingParameter.value = { ...parameter }
-//       showDrawer.value = true
-//    }
-// })
-
 const onDelete = (parameter) => {
-   emit('delete', parameter)
+   parameterToDelete.value = parameter
+   emit('delete-initialized', parameter)
+}
+
+const startDeleting = () => {
+   showDrawer.value = false
+   showDeleteModal.value = true
+}
+
+const cancelDelete = () => {
+   emit('delete-cancelled', parameterToDelete.value)
+   showDeleteModal.value = false
+   parameterToDelete.value = null
+}
+
+const confirmDelete = () => {
+   emit('delete', parameterToDelete.value)
+   showDeleteModal.value = false
+   parameterToDelete.value = null
 }
 
 const handleSubmit = () => {
@@ -161,4 +222,9 @@ const handleSubmit = () => {
    isEditing.value = false
    editingParameter.value = { id: '', key: '', value: '', description: '' }
 }
+
+defineExpose({
+   startEditing,
+   startDeleting,
+})
 </script>

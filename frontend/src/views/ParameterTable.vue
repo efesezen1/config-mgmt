@@ -105,7 +105,13 @@ const newParameterModel = defineModel('newParameter', {
    default: () => ({}),
 })
 
-const emit = defineEmits(['edit', 'delete', 'add', 'edit-initialized'])
+const emit = defineEmits([
+   'edit',
+   'delete',
+   'add',
+   'edit-initialized',
+   'edit-cancelled',
+])
 const editingRows = ref([])
 const deletingRows = ref({})
 
@@ -114,18 +120,8 @@ const onRowEditSave = (event) => {
 }
 
 const onRowEditCancel = async (event) => {
-   try {
-      await $http.put(`/parameters/${event.data.id}/unlock`)
-      editingRows.value = editingRows.value.filter(row => row !== event.data)
-   } catch (error) {
-      console.error('Error unlocking parameter:', error)
-      toast.add({
-         severity: 'error',
-         summary: 'Error',
-         detail: 'Failed to unlock parameter',
-         life: 3000,
-      })
-   }
+   editingRows.value = editingRows.value.filter((row) => row !== event.data)
+   emit('edit-cancelled', event.data)
 }
 
 const onEditInitialized = (event) => {
