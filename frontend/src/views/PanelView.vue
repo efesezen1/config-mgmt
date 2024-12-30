@@ -5,7 +5,7 @@
          v-if="isLoading"
          class="flex justify-center items-center min-h-[200px]"
       >
-         <div class=" h-8 w-8 border-blue-500">
+         <div class="h-8 w-8 border-blue-500">
             <i class="pi pi-spin pi-spinner"></i>
          </div>
       </div>
@@ -29,8 +29,17 @@ import { generateUUID } from '../utils/uuid.js'
 import ParameterTable from './ParameterTable.vue'
 import ParameterCard from './ParameterCard.vue'
 import Navbar from '../components/Navbar.vue'
-import $http from '../api/axios'
 import { useToast } from 'primevue/usetoast'
+import { db } from '../config/firebase'
+import {
+   collection,
+   onSnapshot,
+   query,
+   addDoc,
+   updateDoc,
+   deleteDoc,
+   doc,
+} from 'firebase/firestore'
 
 const BREAKPOINT_MD = 768 // Standard medium breakpoint
 
@@ -73,86 +82,133 @@ const columns = [
 
 const toast = useToast()
 
+let unsubscribe = null
+
 const handleResize = throttle(() => {
    screenWidth.value = window.innerWidth
 }, 200) // 200ms throttle delay
 
-onMounted(async () => {
-   try {
-      isLoading.value = true
-      const response = await $http.get('/parameters')
-      parameters.value = response.data.parameters
-      console.log('Fetched parameters:', parameters.value)
-   } catch (error) {
-      console.error('Error fetching parameters:', error)
-   } finally {
-      isLoading.value = false
-   }
+onMounted(() => {
+   isLoading.value = true
+   const q = query(collection(db, 'parameters'))
+   unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+         parameters.value = snapshot.docs.map((doc) => {
+            console.log(doc.data())
+            return {
+               id: doc.id,
+               ...doc.data(),
+            }
+         })
+         isLoading.value = false
+      },
+      (error) => {
+         console.error('Error fetching parameters:', error)
+         toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to fetch parameters',
+            life: 3000,
+         })
+         isLoading.value = false
+      }
+   )
    window.addEventListener('resize', handleResize)
 })
 
-// Cleanup
 onUnmounted(() => {
+   if (unsubscribe) {
+      unsubscribe()
+   }
    window.removeEventListener('resize', handleResize)
 })
 
 const onRowEditSave = async (editedParameter) => {
    try {
-      const index = parameters.value.findIndex(
-         (param) => param.id === editedParameter.id
-      )
-      if (index !== -1) {
-         await $http.put(`/parameters/${editedParameter.id}`, {
-            key: editedParameter.key,
-            value: editedParameter.value,
-            description: editedParameter.description
-         })
-         parameters.value[index] = editedParameter
-         toast.add({ severity: 'success', summary: 'Success', detail: 'Parameter updated successfully', life: 3000 })
-      }
+      const paramRef = doc(db, 'parameters', editedParameter.id)
+      await updateDoc(paramRef, {
+         key: editedParameter.key,
+         value: editedParameter.value,
+         description: editedParameter.description,
+      })
+      toast.add({
+         severity: 'success',
+         summary: 'Success',
+         detail: 'Parameter updated successfully',
+         life: 3000,
+      })
    } catch (error) {
       console.error('Error updating parameter:', error)
-      toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to update parameter', life: 3000 })
+      toast.add({
+         severity: 'error',
+         summary: 'Error',
+         detail: 'Failed to update parameter',
+         life: 3000,
+      })
    }
 }
 
 const deleteParameter = async (param) => {
    try {
-      await $http.delete(`/parameters/${param.id}`)
-      parameters.value = parameters.value.filter((p) => p.id !== param.id)
-      toast.add({ severity: 'success', summary: 'Success', detail: 'Parameter deleted successfully', life: 3000 })
+      await deleteDoc(doc(db, 'parameters', param.id))
+      toast.add({
+         severity: 'success',
+         summary: 'Success',
+         detail: 'Parameter deleted successfully',
+         life: 3000,
+      })
    } catch (error) {
       console.error('Error deleting parameter:', error)
-      toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to delete parameter', life: 3000 })
+      toast.add({
+         severity: 'error',
+         summary: 'Error',
+         detail: 'Failed to delete parameter',
+         life: 3000,
+      })
    }
 }
 
 const addParameter = async () => {
    try {
       if (!newParameter.value.key || !newParameter.value.value) {
-         toast.add({ severity: 'warn', summary: 'Warning', detail: 'Key and value are required', life: 3000 })
+         toast.add({
+            severity: 'warn',
+            summary: 'Warning',
+            detail: 'Key and value are required',
+            life: 3000,
+         })
          return
       }
 
       const parameterData = {
-         id: generateUUID(),
          ...newParameter.value,
-         createDate: new Date().toISOString()
+         id: generateUUID(),
+         createDate: new Date().toISOString(),
       }
 
-      await $http.post('/parameters', parameterData)
-      parameters.value.push(parameterData)
-      toast.add({ severity: 'success', summary: 'Success', detail: 'Parameter added successfully', life: 3000 })
-      
-      // Reset the form
+      await addDoc(collection(db, 'parameters'), parameterData)
+      toast.add({
+         severity: 'success',
+         summary: 'Success',
+         detail: 'Parameter added successfully',
+         life: 3000,
+      })
+
+      // Reset form
       newParameter.value = {
          key: '',
          value: '',
-         description: ''
+         description: '',
       }
    } catch (error) {
       console.error('Error adding parameter:', error)
-      toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to add parameter', life: 3000 })
+      toast.add({
+         severity: 'error',
+         summary: 'Error',
+         detail: 'Failed to add parameter',
+         life: 3000,
+      })
    }
 }
 </script>
