@@ -8,8 +8,15 @@
                      v-for="col in columns"
                      :key="col.field"
                      class="text-left p-3 border-b border-slate-700"
+                     :class="{ 'cursor-pointer': col.field === 'createdAt' }"
+                     @click="col.field === 'createdAt' && toggleSort()"
                   >
                      {{ col.header }}
+                     <span v-if="col.field === 'createdAt'" class="ml-1">
+                        <i v-if="sortOrder === 'asc'" class="pi pi-sort-up"></i>
+                        <i v-else-if="sortOrder === 'desc'" class="pi pi-sort-down"></i>
+                        <i v-else="sortOrder === 'desc'" class="pi pi-sort"></i>
+                     </span>
                   </th>
                   <th class="text-left p-3 border-b border-slate-700">
                      Actions
@@ -141,7 +148,19 @@ const props = defineProps({
    },
 })
 
-const displayedParameters = computed(() => props.parameters)
+const displayedParameters = computed(() => {
+   if (sortOrder.value === 'regular') {
+      return props.parameters
+   }
+   
+   return [...props.parameters].sort((a, b) => {
+      const dateA = new Date(a.createdAt)
+      const dateB = new Date(b.createdAt)
+      return sortOrder.value === 'asc' 
+         ? dateA - dateB 
+         : dateB - dateA
+   })
+})
 
 const showDrawer = ref(false)
 const editingParameter = ref({
@@ -161,6 +180,18 @@ const newParameterModel = defineModel('newParameter', {
       description: '',
    },
 })
+
+const sortOrder = ref('regular') // 'regular', 'asc', 'desc'
+
+const toggleSort = () => {
+   if (sortOrder.value === 'regular') {
+      sortOrder.value = 'asc'
+   } else if (sortOrder.value === 'asc') {
+      sortOrder.value = 'desc'
+   } else {
+      sortOrder.value = 'regular'
+   }
+}
 
 const emit = defineEmits([
    'edit',
