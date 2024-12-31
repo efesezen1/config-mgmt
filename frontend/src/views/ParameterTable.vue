@@ -14,7 +14,10 @@
                      {{ col.header }}
                      <span v-if="col.field === 'createdAt'" class="ml-1">
                         <i v-if="sortOrder === 'asc'" class="pi pi-sort-up"></i>
-                        <i v-else-if="sortOrder === 'desc'" class="pi pi-sort-down"></i>
+                        <i
+                           v-else-if="sortOrder === 'desc'"
+                           class="pi pi-sort-down"
+                        ></i>
                         <i v-else="sortOrder === 'desc'" class="pi pi-sort"></i>
                      </span>
                   </th>
@@ -152,13 +155,11 @@ const displayedParameters = computed(() => {
    if (sortOrder.value === 'regular') {
       return props.parameters
    }
-   
+
    return [...props.parameters].sort((a, b) => {
       const dateA = new Date(a.createdAt)
       const dateB = new Date(b.createdAt)
-      return sortOrder.value === 'asc' 
-         ? dateA - dateB 
-         : dateB - dateA
+      return sortOrder.value === 'asc' ? dateA - dateB : dateB - dateA
    })
 })
 
@@ -193,15 +194,7 @@ const toggleSort = () => {
    }
 }
 
-const emit = defineEmits([
-   'edit',
-   'delete',
-   'add',
-   'edit-initialized',
-   'edit-cancelled',
-   'delete-initialized',
-   'delete-cancelled',
-])
+const emit = defineEmits(['edit', 'delete', 'add', 'initialized', 'cancelled'])
 
 watch(isEditing, (x) => {
    if (!x) {
@@ -213,7 +206,7 @@ watch(showDrawer, (visible) => {
    if (visible && !isEditing.value) {
       editingParameter.value = { id: '', key: '', value: '', description: '' }
    } else if (!visible && isEditing.value) {
-      emit('edit-cancelled', editingParameter.value)
+      emit('cancelled', editingParameter.value, 'edit')
       isEditing.value = false
       editingParameter.value = { id: '', key: '', value: '', description: '' }
    }
@@ -226,12 +219,12 @@ const startEditing = (parameter) => {
 }
 
 const onEdit = async (parameter) => {
-   emit('edit-initialized', parameter)
+   emit('initialized', parameter, 'edit')
 }
 
 const onDelete = (parameter) => {
    parameterToDelete.value = parameter
-   emit('delete-initialized', parameter)
+   emit('initialized', parameter, 'delete')
 }
 
 const startDeleting = () => {
@@ -241,7 +234,7 @@ const startDeleting = () => {
 
 const cancelDelete = () => {
    showDeleteModal.value = false
-   emit('delete-cancelled', parameterToDelete.value)
+   emit('cancelled', parameterToDelete.value, 'delete')
    parameterToDelete.value = null
 }
 

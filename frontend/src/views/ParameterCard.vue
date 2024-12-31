@@ -151,15 +151,7 @@ const newParameterModel = defineModel('newParameter', {
    },
 })
 
-const emit = defineEmits([
-   'edit',
-   'delete',
-   'add',
-   'edit-initialized',
-   'edit-cancelled',
-   'delete-initialized',
-   'delete-cancelled',
-])
+const emit = defineEmits(['edit', 'delete', 'add', 'initialized', 'cancelled'])
 
 watch(isEditing, (x) => {
    if (!x) {
@@ -171,7 +163,7 @@ watch(showDrawer, (visible) => {
    if (visible && !isEditing.value) {
       editingParameter.value = { id: '', key: '', value: '', description: '' }
    } else if (!visible && isEditing.value) {
-      emit('edit-cancelled', editingParameter.value)
+      emit('cancelled', editingParameter.value, 'edit')
       isEditing.value = false
       editingParameter.value = { id: '', key: '', value: '', description: '' }
    }
@@ -184,12 +176,12 @@ const startEditing = (parameter) => {
 }
 
 const onEdit = async (parameter) => {
-   emit('edit-initialized', parameter)
+   emit('initialized', parameter, 'edit')
 }
 
 const onDelete = (parameter) => {
    parameterToDelete.value = parameter
-   emit('delete-initialized', parameter)
+   emit('initialized', parameter, 'delete')
 }
 
 const startDeleting = () => {
@@ -198,7 +190,7 @@ const startDeleting = () => {
 }
 
 const cancelDelete = () => {
-   emit('delete-cancelled', parameterToDelete.value)
+   emit('cancelled', parameterToDelete.value, 'delete')
    showDeleteModal.value = false
    parameterToDelete.value = null
 }
