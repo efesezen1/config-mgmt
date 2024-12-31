@@ -52,7 +52,7 @@
          <div v-else class="text-center">No items exist.</div>
          <Button
             icon="pi pi-plus"
-            severity=""
+            @click="$emit('initialized', null, 'add')"
             rounded
             style="position: sticky; bottom: 2rem; right: 2rem"
             class="sticky bottom-4 right-4 !ml-auto"

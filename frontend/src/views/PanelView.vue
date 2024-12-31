@@ -27,8 +27,13 @@
    <Drawer
       v-model:visible="showDrawer"
       position="right"
-      class="!bg-slate-900 !w-4/5"
+      class="bg-slate-900 w-4/5 md:w-1/2 lg:w-1/3 xl:w-1/4"
    >
+      <template #header>
+         <span class="capitalize text-lg font-semibold">
+            {{ isEditing ? 'Edit' : 'Add' }} Parameter
+         </span>
+      </template>
       <div class="p-4">
          <div class="flex flex-col gap-3">
             <input
@@ -52,7 +57,7 @@
       v-model:visible="showDeleteModal"
       header="Confirm Delete"
       :modal="true"
-      class="!bg-slate-900"
+      class="bg-slate-900"
    >
       <div class="flex flex-col gap-4">
          <p>Are you sure you want to delete this parameter?</p>
@@ -66,13 +71,13 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
-import { throttle, generateUUID, localizedDate, getCurrentUser } from '../utils'
+import { throttle, generateUUID, localizedDate } from '../utils'
 import ParameterTable from './ParameterTable.vue'
 import ParameterCard from './ParameterCard.vue'
 import Navbar from '../components/Navbar.vue'
 import { useToast } from 'primevue/usetoast'
 import $http from '../api/axios'
-import { collection, onSnapshot, query, doc } from 'firebase/firestore'
+import { collection, onSnapshot, query } from 'firebase/firestore'
 import { db } from '../config/firebase'
 import { auth } from '../config/firebase'
 const showDeleteModal = ref(false)
@@ -80,7 +85,7 @@ const BREAKPOINT_MD = 768 // Standard medium breakpoint
 let PARAMETERS_COLLECTION = 'parameters'
 const screenWidth = ref(window.innerWidth)
 const currentComponent = computed(() => {
-   return screenWidth.value >= BREAKPOINT_MD ? ParameterTable : ParameterCard
+   return screenWidth.value < BREAKPOINT_MD ? ParameterCard : ParameterTable
 }) // Dynamic component
 const parameters = ref([]) // Parameters list rendered on the screen
 const isLoading = ref(false)
@@ -149,7 +154,10 @@ const handleSubmit = () => {
    if (isEditing.value) {
       onEditSave(editingParameter.value)
    } else {
-      addParameter(editingParameter.value)
+      const parameterToAdd = screenWidth.value < BREAKPOINT_MD 
+         ? editingParameter.value 
+         : newParameter.value
+      addParameter(parameterToAdd)
    }
    showDrawer.value = false
 }
@@ -248,7 +256,18 @@ const lockParameter = async (parameter, action) => {
    }
 }
 
+const startAdding = () => {
+   isEditing.value = false
+   editingParameter.value = { id: '', key: '', value: '', description: '' }
+   showDrawer.value = true
+}
+
 const onParameterInitialized = async (parameter, action) => {
+   console.log('onParameterInitialized', parameter, action)
+   if (!parameter && action === 'add') {
+      startAdding()
+      return
+   }
    try {
       const lockResult = await lockParameter(parameter, action)
       if (!lockResult) {
@@ -326,9 +345,9 @@ const deleteParameter = async (param) => {
 }
 
 // . . . ADD
-const addParameter = async () => {
+const addParameter = async (parameter) => {
    try {
-      if (!newParameter.value.key || !newParameter.value.value) {
+      if (!parameter.key || !parameter.value) {
          toast.add({
             severity: 'warn',
             summary: 'Warning',
@@ -339,17 +358,17 @@ const addParameter = async () => {
       }
 
       await $http.post('/parameters', {
-         key: newParameter.value.key,
-         value: newParameter.value.value,
-         description: newParameter.value.description || '',
+         key: parameter.key,
+         value: parameter.value,
+         description: parameter.description || '',
          id: generateUUID(),
       })
 
-      // Reset form
-      newParameter.value = {
-         key: '',
-         value: '',
-         description: '',
+      // Reset the appropriate form based on view
+      if (screenWidth.value < BREAKPOINT_MD) {
+         editingParameter.value = { id: '', key: '', value: '', description: '' }
+      } else {
+         newParameter.value = { key: '', value: '', description: '' }
       }
 
       toast.add({
