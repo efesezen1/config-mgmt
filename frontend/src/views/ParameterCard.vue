@@ -118,8 +118,6 @@ import { ref, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import Dialog from 'primevue/dialog'
 
-const toast = useToast()
-
 const props = defineProps({
    parameters: {
       type: Array,

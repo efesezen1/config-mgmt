@@ -15,7 +15,7 @@
          ref="componentRef"
          :parameters="parameters"
          v-model:newParameter="newParameter"
-         @edit="onRowEditSave"
+         @edit="onEditSave"
          @edit-initialized="(param) => lockParameter(param, 'edit')"
          @edit-cancelled="(param) => unlockParameter(param, 'edit')"
          @delete="deleteParameter"
@@ -94,8 +94,6 @@ onMounted(() => {
       q,
       (snapshot) => {
          parameters.value = snapshot.docs.map((doc) => {
-            console.log(doc.data())
-
             return {
                id: doc.id,
                ...doc.data(),
@@ -159,10 +157,10 @@ const lockParameter = async (parameter, action) => {
       })
 
       // If we're in card view and it's an edit action, start editing
-      if (currentComponent.value === ParameterCard && action === 'edit') {
+      if (action === 'edit') {
          componentRef.value?.startEditing(parameter)
       }
-      if (currentComponent.value === ParameterCard && action === 'delete') {
+      if (action === 'delete') {
          componentRef.value?.startDeleting(parameter)
       }
    } catch (error) {
@@ -184,7 +182,7 @@ const isParameterLocked = (parameter) => {
 
 // . . . DATABASE OPERATIONS
 // . . . EDIT
-const onRowEditSave = async (editedParameter) => {
+const onEditSave = async (editedParameter) => {
    try {
       await $http.put(`/parameters/${editedParameter.id}`, {
          key: editedParameter.key,
