@@ -1,69 +1,66 @@
 <template>
-   <div class="table-container p-5">
-      <DataTable
-         v-if="parameters.length > 0"
-         :value="parameters"
-         v-model:editingRows="editingRows"
-         dataKey="id"
-         editMode="row"
-         @row-edit-save="onRowEditSave"
-         @row-edit-cancel="onRowEditCancel"
-         @row-edit-init="onEditInitialized"
-         removableSort
-      >
-         <Column
-            v-for="col in columns"
-            :key="col.field"
-            :field="col.field"
-            :header="col.header"
-            :sortable="col.sortable"
-         >
-            <template #editor="{ data, field }" v-if="col.editable">
-               <InputText v-model="data[field]" class="p-inputtext-sm" />
-            </template>
-         </Column>
-         <Column :rowEditor="true">
-            <template #roweditoriniticon>
-               <Button icon="pi pi-pencil" severity="info" />
-            </template>
-            <template #roweditorcancelicon>
-               <Button icon="pi pi-times" severity="danger" variant="text" />
-            </template>
-            <template #roweditorsaveicon>
-               <Button icon="pi pi-check" severity="success" variant="text" />
-            </template>
-         </Column>
-         <Column style="width: 5rem" bodyStyle="text-align:center">
-            <template #body="slotProps">
-               <div v-if="!deletingRows[slotProps.index]">
-                  <Button
-                     :disabled="isParameterLocked(slotProps.data)"
-                     @click="onRowDeleteInit(slotProps)"
-                     icon="pi pi-trash"
-                     rounded
-                     severity="danger"
-                  />
-               </div>
-               <div v-else>
-                  <Button
-                     icon="pi pi-check"
-                     rounded
-                     severity="success"
-                     variant="text"
-                     @click="onRowDeleteConfirm(slotProps)"
-                  />
-                  <Button
-                     icon="pi pi-times"
-                     rounded
-                     severity="danger"
-                     variant="text"
-                     @click="onRowDeleteCancel(slotProps)"
-                  />
-               </div>
-            </template>
-         </Column>
-      </DataTable>
-      <div v-else class="text-center">No items exist.</div>
+   <div class="p-5">
+      <div class="table-container">
+         <table class="w-full">
+            <thead>
+               <tr>
+                  <th
+                     v-for="col in columns"
+                     :key="col.field"
+                     class="text-left p-3 border-b border-slate-700"
+                  >
+                     {{ col.header }}
+                  </th>
+                  <th class="text-left p-3 border-b border-slate-700">
+                     Actions
+                  </th>
+               </tr>
+            </thead>
+            <tbody>
+               <tr
+                  v-for="parameter in displayedParameters"
+                  :key="parameter.id"
+                  class="hover:bg-slate-800"
+               >
+                  <td
+                     v-for="col in columns"
+                     :key="col.field"
+                     class="p-3 border-b border-slate-700"
+                  >
+                     {{ parameter[col.field] }}
+                  </td>
+                  <td class="p-3 border-b border-slate-700">
+                     <div class="flex gap-2">
+                        <Button
+                           icon="pi pi-pencil"
+                           severity="info"
+                           rounded
+                           size="small"
+                           @click="onEdit(parameter)"
+                           :disabled="isParameterLocked(parameter)"
+                        />
+                        <Button
+                           icon="pi pi-trash"
+                           severity="danger"
+                           rounded
+                           size="small"
+                           @click="onDelete(parameter)"
+                           :disabled="isParameterLocked(parameter)"
+                        />
+                     </div>
+                  </td>
+               </tr>
+               <tr v-if="parameters.length === 0">
+                  <td
+                     :colspan="columns.length + 1"
+                     class="text-center p-3 border-b border-slate-700"
+                  >
+                     No items exist.
+                  </td>
+               </tr>
+            </tbody>
+         </table>
+      </div>
       <div class="mt-5 bg-[#1a1d2d] p-4 rounded-lg">
          <div class="flex gap-3 items-center">
             <input
@@ -81,11 +78,54 @@
             />
          </div>
       </div>
+      <Drawer
+         v-model:visible="showDrawer"
+         position="right"
+         class="!bg-slate-900 !w-4/5"
+      >
+         <div class="p-4">
+            <div class="flex flex-col gap-3">
+               <input
+                  v-for="col in columns.filter((c) => c.editable)"
+                  :key="col.field"
+                  v-model="editingParameter[col.field]"
+                  :placeholder="col.inputHeader"
+                  class="input-style rounded"
+               />
+               <Button
+                  :icon="isEditing ? 'pi pi-check' : 'pi pi-plus'"
+                  :label="isEditing ? 'UPDATE' : 'ADD'"
+                  severity="warning"
+                  @click="handleSubmit"
+                  class="w-full justify-center"
+               />
+            </div>
+         </div>
+      </Drawer>
+
+      <Dialog
+         v-model:visible="showDeleteModal"
+         header="Confirm Delete"
+         :modal="true"
+         class="!bg-slate-900"
+      >
+         <div class="flex flex-col gap-4">
+            <p>Are you sure you want to delete this parameter?</p>
+            <div class="flex justify-end gap-2">
+               <Button label="No" severity="secondary" @click="cancelDelete" />
+               <Button label="Yes" severity="danger" @click="confirmDelete" />
+            </div>
+         </div>
+      </Dialog>
    </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, computed } from 'vue'
+import { useToast } from 'primevue/usetoast'
+import Dialog from 'primevue/dialog'
+import Button from 'primevue/button'
+import Drawer from 'primevue/drawer'
 
 const props = defineProps({
    parameters: {
@@ -101,8 +141,25 @@ const props = defineProps({
    },
 })
 
+const displayedParameters = computed(() => props.parameters)
+
+const showDrawer = ref(false)
+const editingParameter = ref({
+   id: '',
+   key: '',
+   value: '',
+   description: '',
+})
+const isEditing = ref(false)
+const showDeleteModal = ref(false)
+const parameterToDelete = ref(null)
+
 const newParameterModel = defineModel('newParameter', {
-   default: () => ({}),
+   default: {
+      key: '',
+      value: '',
+      description: '',
+   },
 })
 
 const emit = defineEmits([
@@ -111,58 +168,96 @@ const emit = defineEmits([
    'add',
    'edit-initialized',
    'edit-cancelled',
+   'delete-initialized',
+   'delete-cancelled',
 ])
-const editingRows = ref([])
-const deletingRows = ref({})
 
-const onRowEditSave = (event) => {
-   emit('edit', event.newData)
+watch(isEditing, (x) => {
+   if (!x) {
+      editingParameter.value = { id: '', key: '', value: '', description: '' }
+   }
+})
+
+watch(showDrawer, (visible) => {
+   if (visible && !isEditing.value) {
+      editingParameter.value = { id: '', key: '', value: '', description: '' }
+   } else if (!visible && isEditing.value) {
+      emit('edit-cancelled', editingParameter.value)
+      isEditing.value = false
+      editingParameter.value = { id: '', key: '', value: '', description: '' }
+   }
+})
+
+const startEditing = (parameter) => {
+   isEditing.value = true
+   editingParameter.value = { ...parameter }
+   showDrawer.value = true
 }
 
-const onRowEditCancel = async (event) => {
-   editingRows.value = editingRows.value.filter((row) => row !== event.data)
-   emit('edit-cancelled', event.data)
+const onEdit = async (parameter) => {
+   emit('edit-initialized', parameter)
 }
 
-const onEditInitialized = (event) => {
-   // editingRows.value.push(event.data)
-   console.log(event.data)
-   emit('edit-initialized', event.data)
+const onDelete = (parameter) => {
+   parameterToDelete.value = parameter
+   emit('delete-initialized', parameter)
 }
 
-const onRowDeleteInit = (slotProps) => {
-   deletingRows.value[slotProps.index] = true
+const startDeleting = () => {
+   showDrawer.value = false
+   showDeleteModal.value = true
 }
 
-const onRowDeleteConfirm = (slotProps) => {
-   emit('delete', slotProps.data)
-   deletingRows.value[slotProps.index] = false
+const cancelDelete = () => {
+   showDeleteModal.value = false
+   emit('delete-cancelled', parameterToDelete.value)
+   parameterToDelete.value = null
 }
 
-const onRowDeleteCancel = (slotProps) => {
-   deletingRows.value[slotProps.index] = false
+const confirmDelete = () => {
+   emit('delete', parameterToDelete.value)
+   showDeleteModal.value = false
+   parameterToDelete.value = null
 }
+
+const handleSubmit = () => {
+   if (isEditing.value) {
+      emit('edit', editingParameter.value)
+   } else {
+      emit('add', editingParameter.value)
+   }
+   showDrawer.value = false
+}
+
+defineExpose({
+   startEditing,
+   startDeleting,
+})
 </script>
 
 <style scoped>
-.table-container :deep(tr th) {
-   background: transparent;
+.input-style {
+   @apply bg-slate-800 border-none p-2;
 }
 
-.table-container :deep(tr) {
-   background: transparent;
+.table-container {
+   @apply bg-slate-900 rounded-lg overflow-hidden;
 }
 
-.table-container :deep(.p-datatable .p-datatable-tbody tr td) {
-   border-color: #2a2d3d;
+table {
+   @apply w-full border-collapse;
 }
 
-.table-container :deep(.p-datatable .p-datatable-tbody tr td .p-inputtext) {
-   width: 100%;
-   background-color: #13151f;
-   border: 1px solid #2a2d3d;
-   padding: 6px 12px;
-   color: #a9b7d0;
-   border-radius: 4px;
+th {
+   @apply bg-slate-800 font-medium text-slate-300;
+}
+
+tr:hover {
+   @apply bg-slate-800/50;
+}
+
+td,
+th {
+   @apply text-left p-3 border-b border-slate-700;
 }
 </style>
