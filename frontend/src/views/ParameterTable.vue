@@ -18,7 +18,7 @@
                            v-else-if="sortOrder === 'desc'"
                            class="pi pi-sort-down"
                         ></i>
-                        <i v-else="sortOrder === 'desc'" class="pi pi-sort"></i>
+                        <i v-else class="pi pi-sort"></i>
                      </span>
                   </th>
                   <th class="text-left p-3 border-b border-slate-700">
@@ -88,54 +88,11 @@
             />
          </div>
       </div>
-      <Drawer
-         v-model:visible="showDrawer"
-         position="right"
-         class="!bg-slate-900 !w-4/5"
-      >
-         <div class="p-4">
-            <div class="flex flex-col gap-3">
-               <input
-                  v-for="col in columns.filter((c) => c.editable)"
-                  :key="col.field"
-                  v-model="editingParameter[col.field]"
-                  :placeholder="col.inputHeader"
-                  class="input-style rounded"
-               />
-               <Button
-                  :icon="isEditing ? 'pi pi-check' : 'pi pi-plus'"
-                  :label="isEditing ? 'UPDATE' : 'ADD'"
-                  severity="warning"
-                  @click="handleSubmit"
-                  class="w-full justify-center"
-               />
-            </div>
-         </div>
-      </Drawer>
-
-      <Dialog
-         v-model:visible="showDeleteModal"
-         header="Confirm Delete"
-         :modal="true"
-         class="!bg-slate-900"
-      >
-         <div class="flex flex-col gap-4">
-            <p>Are you sure you want to delete this parameter?</p>
-            <div class="flex justify-end gap-2">
-               <Button label="No" severity="secondary" @click="cancelDelete" />
-               <Button label="Yes" severity="danger" @click="confirmDelete" />
-            </div>
-         </div>
-      </Dialog>
    </div>
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
-import { useToast } from 'primevue/usetoast'
-import Dialog from 'primevue/dialog'
-import Button from 'primevue/button'
-import Drawer from 'primevue/drawer'
+import { ref, computed } from 'vue'
 
 const props = defineProps({
    parameters: {
@@ -163,17 +120,6 @@ const displayedParameters = computed(() => {
    })
 })
 
-const showDrawer = ref(false)
-const editingParameter = ref({
-   id: '',
-   key: '',
-   value: '',
-   description: '',
-})
-const isEditing = ref(false)
-const showDeleteModal = ref(false)
-const parameterToDelete = ref(null)
-
 const newParameterModel = defineModel('newParameter', {
    default: {
       key: '',
@@ -194,69 +140,15 @@ const toggleSort = () => {
    }
 }
 
-const emit = defineEmits(['edit', 'delete', 'add', 'initialized', 'cancelled'])
-
-watch(isEditing, (x) => {
-   if (!x) {
-      editingParameter.value = { id: '', key: '', value: '', description: '' }
-   }
-})
-
-watch(showDrawer, (visible) => {
-   if (visible && !isEditing.value) {
-      editingParameter.value = { id: '', key: '', value: '', description: '' }
-   } else if (!visible && isEditing.value) {
-      emit('cancelled', editingParameter.value, 'edit')
-      isEditing.value = false
-      editingParameter.value = { id: '', key: '', value: '', description: '' }
-   }
-})
-
-const startEditing = (parameter) => {
-   isEditing.value = true
-   editingParameter.value = { ...parameter }
-   showDrawer.value = true
-}
+const emit = defineEmits(['initialized'])
 
 const onEdit = async (parameter) => {
    emit('initialized', parameter, 'edit')
 }
 
 const onDelete = (parameter) => {
-   parameterToDelete.value = parameter
    emit('initialized', parameter, 'delete')
 }
-
-const startDeleting = () => {
-   showDrawer.value = false
-   showDeleteModal.value = true
-}
-
-const cancelDelete = () => {
-   showDeleteModal.value = false
-   emit('cancelled', parameterToDelete.value, 'delete')
-   parameterToDelete.value = null
-}
-
-const confirmDelete = () => {
-   emit('delete', parameterToDelete.value)
-   showDeleteModal.value = false
-   parameterToDelete.value = null
-}
-
-const handleSubmit = () => {
-   if (isEditing.value) {
-      emit('edit', editingParameter.value)
-   } else {
-      emit('add', editingParameter.value)
-   }
-   showDrawer.value = false
-}
-
-defineExpose({
-   startEditing,
-   startDeleting,
-})
 </script>
 
 <style scoped>

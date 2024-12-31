@@ -16,7 +16,7 @@
          :parameters="parameters"
          v-model:newParameter="newParameter"
          @edit="onEditSave"
-         @initialized="lockParameter"
+         @initialized="onParameterInitialized"
          @cancelled="unlockParameter"
          @delete="deleteParameter"
          @add="addParameter"
@@ -24,10 +24,48 @@
          :isParameterLocked="isParameterLocked"
       />
    </div>
+   <Drawer
+      v-model:visible="showDrawer"
+      position="right"
+      class="!bg-slate-900 !w-4/5"
+   >
+      <div class="p-4">
+         <div class="flex flex-col gap-3">
+            <input
+               v-for="col in columns.filter((c) => c.editable)"
+               :key="col.field"
+               v-model="editingParameter[col.field]"
+               :placeholder="col.inputHeader"
+               class="input-style rounded"
+            />
+            <Button
+               :icon="isEditing ? 'pi pi-check' : 'pi pi-plus'"
+               :label="isEditing ? 'UPDATE' : 'ADD'"
+               severity="warning"
+               @click="handleSubmit"
+               class="w-full justify-center"
+            />
+         </div>
+      </div>
+   </Drawer>
+   <Dialog
+      v-model:visible="showDeleteModal"
+      header="Confirm Delete"
+      :modal="true"
+      class="!bg-slate-900"
+   >
+      <div class="flex flex-col gap-4">
+         <p>Are you sure you want to delete this parameter?</p>
+         <div class="flex justify-end gap-2">
+            <Button label="No" severity="secondary" @click="cancelDelete" />
+            <Button label="Yes" severity="danger" @click="confirmDelete" />
+         </div>
+      </div>
+   </Dialog>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { throttle, generateUUID, localizedDate, getCurrentUser } from '../utils'
 import ParameterTable from './ParameterTable.vue'
 import ParameterCard from './ParameterCard.vue'
@@ -37,7 +75,7 @@ import $http from '../api/axios'
 import { collection, onSnapshot, query, doc } from 'firebase/firestore'
 import { db } from '../config/firebase'
 import { auth } from '../config/firebase'
-
+const showDeleteModal = ref(false)
 const BREAKPOINT_MD = 768 // Standard medium breakpoint
 let PARAMETERS_COLLECTION = 'parameters'
 const screenWidth = ref(window.innerWidth)
@@ -51,8 +89,9 @@ const newParameter = ref({
    value: '',
    description: '',
 })
+const parameterToDelete = ref(null)
 const componentRef = ref(null)
-
+const showDrawer = ref(false)
 // . . . EDIT DATA VIEWS BY THESE PARAMETERS
 const columns = [
    {
@@ -76,8 +115,44 @@ const columns = [
    },
 ]
 
+const editingParameter = ref({
+   id: '',
+   key: '',
+   value: '',
+   description: '',
+})
+const isEditing = ref(false)
 const toast = useToast()
+watch(isEditing, (x) => {
+   if (!x) {
+      editingParameter.value = { id: '', key: '', value: '', description: '' }
+   }
+})
 
+watch(showDrawer, (visible) => {
+   if (visible && !isEditing.value) {
+      editingParameter.value = { id: '', key: '', value: '', description: '' }
+   } else if (!visible && isEditing.value) {
+      unlockParameter(editingParameter.value, 'edit')
+      isEditing.value = false
+      editingParameter.value = { id: '', key: '', value: '', description: '' }
+   }
+})
+
+const startEditing = (parameter) => {
+   isEditing.value = true
+   editingParameter.value = { ...parameter }
+   showDrawer.value = true
+}
+
+const handleSubmit = () => {
+   if (isEditing.value) {
+      onEditSave(editingParameter.value)
+   } else {
+      addParameter(editingParameter.value)
+   }
+   showDrawer.value = false
+}
 let unsubscribe = null
 
 const handleResize = throttle(() => {
@@ -156,10 +231,10 @@ const lockParameter = async (parameter, action) => {
 
       // If we're in card view and it's an edit action, start editing
       if (action === 'edit') {
-         componentRef.value?.startEditing(parameter)
+         startEditing(parameter)
       }
       if (action === 'delete') {
-         componentRef.value?.startDeleting(parameter)
+         startDeleting(parameter)
       }
    } catch (error) {
       console.error('Error locking parameter:', error)
@@ -170,6 +245,31 @@ const lockParameter = async (parameter, action) => {
          life: 3000,
       })
       throw error // Re-throw to prevent editing in table view
+   }
+}
+
+const onParameterInitialized = async (parameter, action) => {
+   try {
+      const lockResult = await lockParameter(parameter, action)
+      if (!lockResult) {
+         return
+      }
+
+      // If we're in card view and it's an edit action, start editing
+      if (action === 'edit') {
+         startEditing(parameter)
+      }
+      if (action === 'delete') {
+         startDeleting(parameter)
+      }
+   } catch (error) {
+      console.error('Error locking parameter:', error)
+      toast.add({
+         severity: 'error',
+         summary: 'Error',
+         detail: 'Failed to lock parameter',
+         life: 3000,
+      })
    }
 }
 
@@ -267,5 +367,23 @@ const addParameter = async () => {
          life: 3000,
       })
    }
+}
+
+const cancelDelete = () => {
+   showDeleteModal.value = false
+   unlockParameter(parameterToDelete.value, 'delete')
+   parameterToDelete.value = null
+}
+
+const confirmDelete = () => {
+   deleteParameter(parameterToDelete.value)
+   showDeleteModal.value = false
+   parameterToDelete.value = null
+}
+const startDeleting = (parameter) => {
+   console.log(parameter)
+   showDrawer.value = false
+   showDeleteModal.value = true
+   parameterToDelete.value = parameter
 }
 </script>

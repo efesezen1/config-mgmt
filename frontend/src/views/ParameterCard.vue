@@ -35,7 +35,7 @@
                   icon="pi pi-pencil"
                   label="Edit"
                   severity="info"
-                  @click="onEdit(parameter)"
+                  @click="$emit('initialized', parameter, 'edit')"
                   class="w-full justify-center"
                   :disabled="isParameterLocked(parameter)"
                />
@@ -44,7 +44,7 @@
                   icon="pi pi-trash"
                   label="Delete"
                   severity="danger"
-                  @click="onDelete(parameter)"
+                  @click="$emit('initialized', parameter, 'delete')"
                   class="w-full justify-center"
                />
             </div>
@@ -56,67 +56,13 @@
             rounded
             style="position: sticky; bottom: 2rem; right: 2rem"
             class="sticky bottom-4 right-4 !ml-auto"
-            @click="
-               () => {
-                  isEditing = false
-                  showDrawer = true
-               }
-            "
          />
-         <Drawer
-            v-model:visible="showDrawer"
-            position="right"
-            class="!bg-slate-900 !w-4/5"
-         >
-            <div class="p-4">
-               <div class="flex flex-col gap-3">
-                  <input
-                     v-for="col in columns.filter((c) => c.editable)"
-                     :key="col.field"
-                     v-model="editingParameter[col.field]"
-                     :placeholder="col.inputHeader"
-                     class="input-style rounded"
-                  />
-                  <Button
-                     :icon="isEditing ? 'pi pi-check' : 'pi pi-plus'"
-                     :label="isEditing ? 'UPDATE' : 'ADD'"
-                     severity="warning"
-                     @click="handleSubmit"
-                     class="w-full justify-center"
-                  />
-               </div>
-            </div>
-         </Drawer>
-         <Dialog
-            v-model:visible="showDeleteModal"
-            header="Confirm Delete"
-            :modal="true"
-            class="!bg-slate-900"
-         >
-            <div class="flex flex-col gap-4">
-               <p>Are you sure you want to delete this parameter?</p>
-               <div class="flex justify-end gap-2">
-                  <Button
-                     label="No"
-                     severity="secondary"
-                     @click="cancelDelete"
-                  />
-                  <Button
-                     label="Yes"
-                     severity="danger"
-                     @click="confirmDelete"
-                  />
-               </div>
-            </div>
-         </Dialog>
       </div>
    </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import { useToast } from 'primevue/usetoast'
-import Dialog from 'primevue/dialog'
+import { ref } from 'vue'
 
 const props = defineProps({
    parameters: {
@@ -132,89 +78,5 @@ const props = defineProps({
    },
 })
 
-const showDrawer = ref(false)
-const editingParameter = ref({
-   id: '',
-   key: '',
-   value: '',
-   description: '',
-})
-const isEditing = ref(false)
-const showDeleteModal = ref(false)
-const parameterToDelete = ref(null)
-
-const newParameterModel = defineModel('newParameter', {
-   default: {
-      key: '',
-      value: '',
-      description: '',
-   },
-})
-
-const emit = defineEmits(['edit', 'delete', 'add', 'initialized', 'cancelled'])
-
-watch(isEditing, (x) => {
-   if (!x) {
-      editingParameter.value = { id: '', key: '', value: '', description: '' }
-   }
-})
-
-watch(showDrawer, (visible) => {
-   if (visible && !isEditing.value) {
-      editingParameter.value = { id: '', key: '', value: '', description: '' }
-   } else if (!visible && isEditing.value) {
-      emit('cancelled', editingParameter.value, 'edit')
-      isEditing.value = false
-      editingParameter.value = { id: '', key: '', value: '', description: '' }
-   }
-})
-
-const startEditing = (parameter) => {
-   isEditing.value = true
-   editingParameter.value = { ...parameter }
-   showDrawer.value = true
-}
-
-const onEdit = async (parameter) => {
-   emit('initialized', parameter, 'edit')
-}
-
-const onDelete = (parameter) => {
-   parameterToDelete.value = parameter
-   emit('initialized', parameter, 'delete')
-}
-
-const startDeleting = () => {
-   showDrawer.value = false
-   showDeleteModal.value = true
-}
-
-const cancelDelete = () => {
-   emit('cancelled', parameterToDelete.value, 'delete')
-   showDeleteModal.value = false
-   parameterToDelete.value = null
-}
-
-const confirmDelete = () => {
-   emit('delete', parameterToDelete.value)
-   showDeleteModal.value = false
-   parameterToDelete.value = null
-}
-
-const handleSubmit = () => {
-   if (isEditing.value) {
-      emit('edit', { ...editingParameter.value })
-   } else {
-      newParameterModel.value = { ...editingParameter.value }
-      emit('add')
-   }
-   showDrawer.value = false
-   isEditing.value = false
-   editingParameter.value = { id: '', key: '', value: '', description: '' }
-}
-
-defineExpose({
-   startEditing,
-   startDeleting,
-})
+const emit = defineEmits(['initialized'])
 </script>
