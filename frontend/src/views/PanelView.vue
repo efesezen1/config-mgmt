@@ -154,9 +154,10 @@ const handleSubmit = () => {
    if (isEditing.value) {
       onEditSave(editingParameter.value)
    } else {
-      const parameterToAdd = screenWidth.value < BREAKPOINT_MD 
-         ? editingParameter.value 
-         : newParameter.value
+      const parameterToAdd =
+         screenWidth.value < BREAKPOINT_MD
+            ? editingParameter.value
+            : newParameter.value
       addParameter(parameterToAdd)
    }
    showDrawer.value = false
@@ -207,12 +208,6 @@ onUnmounted(() => {
 const unlockParameter = async (parameter, action) => {
    try {
       await $http.put(`/parameters/${parameter.id}/unlock`)
-      toast.add({
-         severity: 'info',
-         summary: 'Info',
-         detail: action === 'edit' ? 'Edit cancelled' : 'Delete cancelled',
-         life: 3000,
-      })
    } catch (error) {
       console.error('Error unlocking parameter:', error)
       toast.add({
@@ -366,7 +361,12 @@ const addParameter = async (parameter) => {
 
       // Reset the appropriate form based on view
       if (screenWidth.value < BREAKPOINT_MD) {
-         editingParameter.value = { id: '', key: '', value: '', description: '' }
+         editingParameter.value = {
+            id: '',
+            key: '',
+            value: '',
+            description: '',
+         }
       } else {
          newParameter.value = { key: '', value: '', description: '' }
       }
