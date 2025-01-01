@@ -15,3 +15,11 @@
 .btn-primary-color {
    @apply bg-blue-900 hover:bg-blue-800 focus:bg-blue-800 active:bg-blue-700 transition-colors duration-300;
 }
+
+@media screen and (max-width: 768px) {
+  .p-toast {
+    width: 90vw !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+}
