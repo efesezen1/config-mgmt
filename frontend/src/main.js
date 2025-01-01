@@ -17,6 +17,7 @@ import {
    ToastService,
    Toast,
    Dialog,
+   Tooltip,
 } from './config/primevue'
 
 const app = createApp(App)
@@ -36,4 +37,5 @@ app.use(router)
    .component('Drawer', Drawer)
    .component('Toast', Toast)
    .component('Dialog', Dialog)
+   .directive('tooltip', Tooltip)
    .mount('#app')

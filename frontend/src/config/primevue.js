@@ -11,6 +11,8 @@ import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import Drawer from 'primevue/drawer'
 import Dialog from 'primevue/dialog'
+import Tooltip from 'primevue/tooltip'
+
 export {
     PrimeVue,
     Aura,
@@ -23,5 +25,6 @@ export {
     Drawer,
     ToastService,
     Toast,
-    Dialog
+    Dialog,
+    Tooltip
 }

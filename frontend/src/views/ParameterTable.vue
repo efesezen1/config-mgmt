@@ -49,6 +49,7 @@
                            @click="onEdit(parameter)"
                            :disabled="isParameterLocked(parameter)"
                            :loading="loadingStates[`${parameter.id}-edit`]"
+                           v-tooltip="'Edit'"
                         />
                         <Button
                            icon="pi pi-trash"
@@ -58,6 +59,7 @@
                            @click="onDelete(parameter)"
                            :disabled="isParameterLocked(parameter)"
                            :loading="loadingStates[`${parameter.id}-delete`]"
+                           v-tooltip="'Delete'"
                         />
                      </div>
                   </td>
