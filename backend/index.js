@@ -4,7 +4,7 @@ const morgan = require('morgan')
 const admin = require('./config/firebase')
 const authenticateJWT = require('./middlewares/authenticateJWT')
 const app = express()
-const port = 3000
+const port = process.env.PORT || 3000
 
 // Initialize Firestore
 const db = admin.firestore()
