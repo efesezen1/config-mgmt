@@ -143,6 +143,58 @@ You'll also need to set up `serviceAccountKey.json` for Firebase authentication.
    npm run dev
    ```
 
+## API Endpoints
+
+All API endpoints are prefixed with `/api/v1` and require authentication unless specified otherwise.
+
+### Authentication
+- `POST /auth/token`
+  - Generate a custom authentication token
+  - Body: `{ "uid": string }`
+  - No authentication required
+  - Rate limited
+
+### Parameters
+All parameter endpoints are rate limited.
+
+- `POST /parameters`
+  - Create a new parameter
+  - Body: `{ "id": string, "key": string, "value": string, "description": string }`
+  - Required fields: id, key, value
+
+- `PUT /parameters/:id`
+  - Update an existing parameter
+  - Body: `{ "key": string, "value": string, "description": string }`
+  - All fields are optional
+
+- `DELETE /parameters/:id`
+  - Delete a parameter
+  - No body required
+
+- `PUT /parameters/:id/lock`
+  - Lock a parameter for editing
+  - No body required
+  - Returns 403 if already locked by another user
+
+- `PUT /parameters/:id/unlock`
+  - Unlock a parameter
+  - No body required
+  - Only the user who locked the parameter can unlock it
+
+### Response Format
+All endpoints return JSON responses with the following structure:
+- Success: `{ "message": string }` or `{ "customToken": string }` for auth endpoint
+- Error: `{ "error": string }`
+
+### Status Codes
+- 200: Success
+- 201: Created
+- 400: Bad Request
+- 403: Forbidden
+- 404: Not Found
+- 429: Too Many Requests (Rate limit exceeded)
+- 500: Internal Server Error
+
 ## Deployment Instructions
 
 ### Backend Deployment (Heroku)
@@ -231,4 +283,3 @@ You'll also need to set up `serviceAccountKey.json` for Firebase authentication.
 ## License
 
 MIT
-**
