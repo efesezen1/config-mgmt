@@ -17,7 +17,7 @@ const date = new Date()
 const isLoading = ref(false)
 
 const getCustomToken = async (uid) => {
-   const response = await fetch('http://localhost:3000/api/v1/auth/token', {
+   const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/token`, {
       method: 'POST',
       headers: {
          'Content-Type': 'application/json',
