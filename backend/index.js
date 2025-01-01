@@ -1,6 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const morgan = require('morgan')
+const rateLimit = require('express-rate-limit')
 const admin = require('./config/firebase')
 const authenticateJWT = require('./middlewares/authenticateJWT')
 const app = express()
@@ -12,19 +13,49 @@ const db = admin.firestore()
 // Constants
 const PARAMETERS_COLLECTION = 'parameters'
 
+// Rate Limiters
+const globalLimiter = rateLimit({
+   windowMs: 15 * 60 * 1000, // 15 minutes
+   max: 100, // Limit each IP to 100 requests per windowMs
+   message: 'Too many requests from this IP, please try again after 15 minutes',
+   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+})
+
+const authLimiter = rateLimit({
+   windowMs: 60 * 60 * 1000, // 1 hour
+   max: 15, // Limit each IP to 5 login requests per hour
+   message: 'Too many authentication attempts, please try again after an hour',
+   standardHeaders: true,
+   legacyHeaders: false,
+})
+
+const parameterLimiter = rateLimit({
+   windowMs: 60 * 1000, // 1 minute
+   max: 30, // Limit each IP to 30 requests per minute
+   message: 'Too many parameter operations, please try again after a minute',
+   standardHeaders: true,
+   legacyHeaders: false,
+})
+
 // Middleware
-app.use(cors({
-   origin: ['https://casestudycodeway.netlify.app', 'http://localhost:5173'],
-   credentials: true
-}))
+app.use(
+   cors({
+      origin: ['https://cwconfigpanel.netlify.app/', 'http://localhost:5173'],
+      credentials: true,
+   })
+)
 app.use(express.json())
 app.use(morgan('dev'))
+
+// Apply global rate limiter
+app.use(globalLimiter)
 
 // Initialize router for v1
 const v1Router = express.Router()
 
-// Auth endpoint
-v1Router.post('/auth/token', async (req, res) => {
+// Auth endpoint with specific rate limit
+v1Router.post('/auth/token', authLimiter, async (req, res) => {
    try {
       const { uid } = req.body
       if (!uid) {
@@ -41,7 +72,9 @@ v1Router.post('/auth/token', async (req, res) => {
    }
 })
 
-// Parameters endpoints
+// Parameters endpoints with specific rate limit
+v1Router.use('/parameters', parameterLimiter)
+
 v1Router.post('/parameters', authenticateJWT, async (req, res) => {
    try {
       const { id, key, value, description } = req.body
@@ -176,20 +209,17 @@ v1Router.put('/parameters/:id/lock', authenticateJWT, async (req, res) => {
 
       // Check if already locked by someone else
       if (paramData.isLocked && paramData.lockedBy !== req.user.uid) {
-         return res.status(403).json({ 
-            error: 'Parameter is already locked by another user' 
+         return res.status(403).json({
+            error: 'Parameter is already locked by another user',
          })
       }
 
       // Update with lock information
-      await db
-         .collection(PARAMETERS_COLLECTION)
-         .doc(paramDoc.id)
-         .update({
-            isLocked: true,
-            lockedBy: req.user.uid,
-            lockedAt: admin.firestore.FieldValue.serverTimestamp(),
-         })
+      await db.collection(PARAMETERS_COLLECTION).doc(paramDoc.id).update({
+         isLocked: true,
+         lockedBy: req.user.uid,
+         lockedAt: admin.firestore.FieldValue.serverTimestamp(),
+      })
 
       res.json({ message: 'Parameter locked successfully' })
    } catch (error) {
@@ -217,20 +247,17 @@ v1Router.put('/parameters/:id/unlock', authenticateJWT, async (req, res) => {
 
       // Only the user who locked it can unlock it
       if (paramData.lockedBy !== req.user.uid) {
-         return res.status(403).json({ 
-            error: 'Only the user who locked the parameter can unlock it' 
+         return res.status(403).json({
+            error: 'Only the user who locked the parameter can unlock it',
          })
       }
 
       // Remove lock
-      await db
-         .collection(PARAMETERS_COLLECTION)
-         .doc(paramDoc.id)
-         .update({
-            isLocked: false,
-            lockedBy: null,
-            lockedAt: null,
-         })
+      await db.collection(PARAMETERS_COLLECTION).doc(paramDoc.id).update({
+         isLocked: false,
+         lockedBy: null,
+         lockedAt: null,
+      })
 
       res.json({ message: 'Parameter unlocked successfully' })
    } catch (error) {
