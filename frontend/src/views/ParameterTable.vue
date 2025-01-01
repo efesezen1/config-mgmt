@@ -42,24 +42,18 @@
                   <td class="p-3 border-b border-slate-700">
                      <div class="flex gap-2">
                         <Button
-                           icon="pi pi-pencil"
-                           severity="info"
+                           v-for="btn in actionButtons"
+                           :key="btn.action"
+                           :icon="btn.icon"
+                           :severity="btn.severity"
                            rounded
                            size="small"
-                           @click="onEdit(parameter)"
+                           @click="btn.handler(parameter)"
                            :disabled="isParameterLocked(parameter)"
-                           :loading="loadingStates[`${parameter.id}-edit`]"
-                           v-tooltip="'Edit'"
-                        />
-                        <Button
-                           icon="pi pi-trash"
-                           severity="danger"
-                           rounded
-                           size="small"
-                           @click="onDelete(parameter)"
-                           :disabled="isParameterLocked(parameter)"
-                           :loading="loadingStates[`${parameter.id}-delete`]"
-                           v-tooltip="'Delete'"
+                           :loading="
+                              loadingStates[`${parameter.id}-${btn.action}`]
+                           "
+                           v-tooltip.bottom="btn.tooltip"
                         />
                      </div>
                   </td>
@@ -154,7 +148,6 @@ const toggleSort = () => {
 }
 
 const emit = defineEmits(['initialized'])
-
 const onEdit = async (parameter) => {
    emit('initialized', parameter, 'edit')
 }
@@ -162,6 +155,22 @@ const onEdit = async (parameter) => {
 const onDelete = (parameter) => {
    emit('initialized', parameter, 'delete')
 }
+const actionButtons = ref([
+   {
+      action: 'edit',
+      icon: 'pi pi-pencil',
+      severity: 'info',
+      handler: onEdit,
+      tooltip: 'Edit',
+   },
+   {
+      action: 'delete',
+      icon: 'pi pi-trash',
+      severity: 'danger',
+      handler: onDelete,
+      tooltip: 'Delete',
+   },
+])
 </script>
 
 <style scoped>
