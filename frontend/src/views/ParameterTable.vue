@@ -48,6 +48,7 @@
                            size="small"
                            @click="onEdit(parameter)"
                            :disabled="isParameterLocked(parameter)"
+                           :loading="loadingStates[`${parameter.id}-edit`]"
                         />
                         <Button
                            icon="pi pi-trash"
@@ -56,6 +57,7 @@
                            size="small"
                            @click="onDelete(parameter)"
                            :disabled="isParameterLocked(parameter)"
+                           :loading="loadingStates[`${parameter.id}-delete`]"
                         />
                      </div>
                   </td>
@@ -85,6 +87,7 @@
                icon="pi pi-plus"
                size="large"
                @click="$emit('add', newParameterModel)"
+               :loading="isProcessing"
             />
          </div>
       </div>
@@ -105,6 +108,14 @@ const props = defineProps({
    },
    isParameterLocked: {
       type: Function,
+   },
+   loadingStates: {
+      type: Object,
+      required: true,
+   },
+   isProcessing: {
+      type: Boolean,
+      default: false,
    },
 })
 

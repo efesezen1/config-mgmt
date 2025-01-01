@@ -38,6 +38,7 @@
                   @click="$emit('initialized', parameter, 'edit')"
                   class="w-full justify-center"
                   :disabled="isParameterLocked(parameter)"
+                  :loading="loadingStates[`${parameter.id}-edit`]"
                />
                <Button
                   :disabled="isParameterLocked(parameter)"
@@ -46,6 +47,7 @@
                   severity="danger"
                   @click="$emit('initialized', parameter, 'delete')"
                   class="w-full justify-center"
+                  :loading="loadingStates[`${parameter.id}-delete`]"
                />
             </div>
          </div>
@@ -76,6 +78,10 @@ const props = defineProps({
    isParameterLocked: {
       type: Function,
    },
+   loadingStates: {
+      type: Object,
+      required: true
+   }
 })
 
 const emit = defineEmits(['initialized'])

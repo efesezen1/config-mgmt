@@ -22,6 +22,8 @@
          @add="addParameter"
          :columns="columns"
          :isParameterLocked="isParameterLocked"
+         :loading-states="loadingStates"
+         :is-processing="isProcessing"
       />
    </div>
    <Drawer
@@ -49,6 +51,7 @@
                severity="warning"
                @click="handleSubmit"
                class="w-full justify-center"
+               :loading="isProcessing"
             />
          </div>
       </div>
@@ -80,6 +83,7 @@ import $http from '../api/axios'
 import { collection, onSnapshot, query } from 'firebase/firestore'
 import { db } from '../config/firebase'
 import { auth } from '../config/firebase'
+
 const showDeleteModal = ref(false)
 const BREAKPOINT_MD = 768 // Standard medium breakpoint
 let PARAMETERS_COLLECTION = 'parameters'
@@ -128,6 +132,9 @@ const editingParameter = ref({
 })
 const isEditing = ref(false)
 const toast = useToast()
+const loadingStates = ref({})
+const isProcessing = ref(false)
+
 watch(isEditing, (x) => {
    if (!x) {
       editingParameter.value = { id: '', key: '', value: '', description: '' }
@@ -150,17 +157,25 @@ const startEditing = (parameter) => {
    showDrawer.value = true
 }
 
-const handleSubmit = () => {
-   if (isEditing.value) {
-      onEditSave(editingParameter.value)
-   } else {
-      const parameterToAdd =
-         screenWidth.value < BREAKPOINT_MD
-            ? editingParameter.value
-            : newParameter.value
-      addParameter(parameterToAdd)
+const handleSubmit = async () => {
+   try {
+      isProcessing.value = true
+      if (isEditing.value) {
+         await onEditSave(editingParameter.value)
+      } else {
+         await addParameter(editingParameter.value)
+      }
+      showDrawer.value = false
+   } catch (error) {
+      toast.add({
+         severity: 'error',
+         summary: 'Error',
+         detail: error.message,
+         life: 3000,
+      })
+   } finally {
+      isProcessing.value = false
    }
-   showDrawer.value = false
 }
 let unsubscribe = null
 
@@ -258,32 +273,31 @@ const startAdding = () => {
 }
 
 const onParameterInitialized = async (parameter, action) => {
-   console.log('Parameter operation started...')
-   if (!parameter && action === 'add') {
-      startAdding()
-      return
-   }
    try {
-      const lockResult = await lockParameter(parameter, action)
-      if (!lockResult) {
-         return
+      if (parameter) {
+         loadingStates.value[`${parameter.id}-${action}`] = true
       }
 
-      // If we're in card view and it's an edit action, start editing
-      if (action === 'edit') {
-         startEditing(parameter)
-      }
-      if (action === 'delete') {
-         startDeleting(parameter)
+      const isLocked = await lockParameter(parameter, action)
+
+      if (isLocked) {
+         if (action === 'edit') {
+            startEditing(parameter)
+         } else if (action === 'delete') {
+            startDeleting(parameter)
+         }
       }
    } catch (error) {
-      console.error('Error locking parameter:', error)
       toast.add({
          severity: 'error',
          summary: 'Error',
-         detail: 'Failed to lock parameter',
+         detail: error.message,
          life: 3000,
       })
+   } finally {
+      if (parameter) {
+         loadingStates.value[`${parameter.id}-${action}`] = false
+      }
    }
 }
 
@@ -342,6 +356,7 @@ const deleteParameter = async (param) => {
 // . . . ADD
 const addParameter = async (parameter) => {
    try {
+      isProcessing.value = true
       if (!parameter.key || !parameter.value) {
          toast.add({
             severity: 'warn',
@@ -385,6 +400,8 @@ const addParameter = async (parameter) => {
          detail: 'Failed to add parameter',
          life: 3000,
       })
+   } finally {
+      isProcessing.value = false
    }
 }
 
