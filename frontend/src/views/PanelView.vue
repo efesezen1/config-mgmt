@@ -55,6 +55,12 @@
             />
          </div>
       </div>
+      <template #footer>
+         <LockStatus
+            :is-locked="isParameterLocked(editingParameter)"
+            :formatted-time="formattedTimeRemaining"
+         />
+      </template>
    </Drawer>
    <Dialog
       v-model:visible="showDeleteModal"
@@ -64,9 +70,15 @@
    >
       <div class="flex flex-col gap-4">
          <p>Are you sure you want to delete this parameter?</p>
-         <div class="flex justify-end gap-2">
-            <Button label="No" severity="secondary" @click="cancelDelete" />
-            <Button label="Yes" severity="danger" @click="confirmDelete" />
+         <div class="flex justify-between items-center">
+            <LockStatus
+               :is-locked="isParameterLocked(editingParameter)"
+               :formatted-time="formattedTimeRemaining"
+            />
+            <div class="flex justify-end gap-2">
+               <Button label="No" severity="secondary" @click="cancelDelete" />
+               <Button label="Yes" severity="danger" @click="confirmDelete" />
+            </div>
          </div>
       </div>
    </Dialog>
@@ -78,11 +90,11 @@ import { throttle, generateUUID, localizedDate } from '../utils'
 import ParameterTable from './ParameterTable.vue'
 import ParameterCard from './ParameterCard.vue'
 import Navbar from '../components/Navbar.vue'
+import LockStatus from '../components/LockStatus.vue'
 import { useToast } from 'primevue/usetoast'
 import $http from '../api/axios'
 import { collection, onSnapshot, query } from 'firebase/firestore'
-import { db } from '../config/firebase'
-import { auth } from '../config/firebase'
+import { db, auth } from '../config/firebase'
 
 const showDeleteModal = ref(false)
 const BREAKPOINT_MD = 768 // Standard medium breakpoint
@@ -179,6 +191,13 @@ const handleSubmit = async () => {
 }
 let unsubscribe = null
 
+const formattedTimeRemaining = computed(() => {
+   const totalSeconds = Math.max(0, Math.floor(timeRemaining.value / 1000))
+   const minutes = Math.floor(totalSeconds / 60)
+   const seconds = totalSeconds % 60
+   return `${minutes}:${seconds.toString().padStart(2, '0')}`
+})
+
 const handleResize = throttle(() => {
    screenWidth.value = window.innerWidth
 }, 200) // 200ms throttle delay
@@ -186,9 +205,9 @@ const handleResize = throttle(() => {
 let lockCheckInterval = null
 
 // . . . LOCK CHECK
-const TWO_MINUTES = 2 * 60 * 1000 // 2 minutes in milliseconds
+const TWO_MINUTES = 5 * 1000
 let CURRENT_TIME
-
+const timeRemaining = ref(TWO_MINUTES)
 const checkLockExpiration = () => {
    CURRENT_TIME = new Date().getTime()
    if (!parameters.value || parameters.value.length === 0) return
@@ -202,6 +221,8 @@ const checkLockExpiration = () => {
       ) {
          const lockedTime = parameter.lockedAt.toDate().getTime()
          const timeDiff = CURRENT_TIME - lockedTime
+
+         timeRemaining.value = TWO_MINUTES - timeDiff
 
          if (timeDiff >= TWO_MINUTES) {
             // If time is up, unlock the parameter and close modals if this parameter was being edited
@@ -314,12 +335,15 @@ const startAdding = () => {
 
 const onParameterInitialized = async (parameter, action) => {
    try {
+      if (action === 'add') {
+         startAdding()
+         return
+      }
+
       if (parameter) {
          loadingStates.value[`${parameter.id}-${action}`] = true
       }
-
       const isLocked = await lockParameter(parameter, action)
-
       if (isLocked) {
          if (action === 'edit') {
             startEditing(parameter)
