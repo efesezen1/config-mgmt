@@ -205,7 +205,7 @@ const handleResize = throttle(() => {
 let lockCheckInterval = null
 
 // . . . LOCK CHECK
-const TWO_MINUTES = 5 * 1000
+const TWO_MINUTES = 2 * 60 * 1000
 let CURRENT_TIME
 const timeRemaining = ref(TWO_MINUTES)
 const checkLockExpiration = () => {
