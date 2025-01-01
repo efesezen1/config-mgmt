@@ -266,7 +266,7 @@ onMounted(() => {
       }
    )
    window.addEventListener('resize', handleResize)
-   lockCheckInterval = setInterval(checkLockExpiration, 3000) // Check every 30 seconds
+   lockCheckInterval = setInterval(checkLockExpiration, 1000) // Check every 1 seconds
 })
 
 onUnmounted(() => {
