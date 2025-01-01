@@ -27,7 +27,7 @@
    <Drawer
       v-model:visible="showDrawer"
       position="right"
-      class="bg-slate-900 w-4/5 md:w-1/2 lg:w-1/3 xl:w-1/4"
+      class="!bg-slate-900 w-4/5 md:w-1/2 lg:w-1/3 xl:w-1/4"
    >
       <template #header>
          <span class="capitalize text-lg font-semibold">
