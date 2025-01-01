@@ -19,11 +19,9 @@ const isLoading = ref(false)
 
 const getCustomToken = async (uid) => {
    try {
-      console.log('Requesting custom token for UID:', uid)
       console.log('API URL:', import.meta.env.VITE_APP_API_URL)
 
       const response = await $http.post('/auth/token', { uid })
-      console.log('Custom token response:', response.data)
       return response.data.customToken
    } catch (error) {
       console.error('Token error details:', {
@@ -48,25 +46,8 @@ const signIn = async () => {
          email.value,
          password.value
       )
-      const user = userCredential.user
-      console.log('Email/Password sign in successful, UID:', user.uid)
-
-      try {
-         // Get custom token from our backend
-         const customToken = await getCustomToken(user.uid)
-         console.log('Custom token received successfully', customToken)
-
-         // Sign in with custom token
-         await signInWithCustomToken(auth, customToken)
-         console.log('Custom token sign in successful')
-
-         // Only navigate if both steps are successful
-         router.push({ name: 'panel' })
-      } catch (tokenError) {
-         console.error('Token error:', tokenError)
-         errMsg.value = 'Failed to authenticate with server. Please try again.'
-         throw tokenError
-      }
+      console.log('Email/Password sign in successful')
+      router.push({ name: 'panel' })
    } catch (error) {
       console.error('Authentication error:', error)
       switch (error.code) {

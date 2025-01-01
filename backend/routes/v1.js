@@ -1,7 +1,7 @@
 const express = require('express')
-const rateLimit = require('express-rate-limit')
 const admin = require('../config/firebase')
 const authenticateJWT = require('../middlewares/authenticateJWT')
+const { authLimiter, parameterLimiter } = require('../config/rateLimit')
 
 const router = express.Router()
 
@@ -11,26 +11,8 @@ const db = admin.firestore()
 // Constants
 const PARAMETERS_COLLECTION = 'parameters'
 
-// Rate Limiters
-const authLimiter = rateLimit({
-   windowMs: 60 * 60 * 1000, // 1 hour
-   max: 15, // Limit each IP to 15 login requests per hour
-   message: 'Too many authentication attempts, please try again after an hour',
-   standardHeaders: true,
-   legacyHeaders: false,
-})
-
-const parameterLimiter = rateLimit({
-   windowMs: 60 * 1000, // 1 minute
-   max: 30, // Limit each IP to 30 requests per minute
-   message: 'Too many parameter operations, please try again after a minute',
-   standardHeaders: true,
-   legacyHeaders: false,
-})
-
 // Auth endpoint with specific rate limit
 router.post('/auth/token', authLimiter, async (req, res) => {
-   
    try {
       const { uid } = req.body
       if (!uid) {
@@ -134,27 +116,6 @@ router.delete('/parameters/:id', authenticateJWT, async (req, res) => {
    } catch (error) {
       console.error('Error deleting parameter:', error)
       res.status(500).json({ error: 'Failed to delete parameter' })
-   }
-})
-
-router.get('/parameters', authenticateJWT, async (req, res) => {
-   try {
-      const snapshot = await db.collection(PARAMETERS_COLLECTION).get()
-      const parameters = []
-      snapshot.forEach((doc) => {
-         parameters.push({
-            id: doc.id,
-            ...doc.data(),
-            createDate: doc.data().createdAt
-               ? new Date(doc.data().createdAt._seconds * 1000).toLocaleString()
-               : new Date().toLocaleString(),
-         })
-      })
-
-      res.json({ parameters })
-   } catch (error) {
-      console.error('Error fetching parameters:', error)
-      res.status(500).json({ error: 'Failed to fetch parameters' })
    }
 })
 

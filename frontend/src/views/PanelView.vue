@@ -258,7 +258,7 @@ const startAdding = () => {
 }
 
 const onParameterInitialized = async (parameter, action) => {
-   console.log('onParameterInitialized', parameter, action)
+   console.log('Parameter operation started...')
    if (!parameter && action === 'add') {
       startAdding()
       return
@@ -400,7 +400,6 @@ const confirmDelete = () => {
    parameterToDelete.value = null
 }
 const startDeleting = (parameter) => {
-   console.log(parameter)
    showDrawer.value = false
    showDeleteModal.value = true
    parameterToDelete.value = parameter
