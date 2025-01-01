@@ -183,6 +183,40 @@ const handleResize = throttle(() => {
    screenWidth.value = window.innerWidth
 }, 200) // 200ms throttle delay
 
+let lockCheckInterval = null
+
+// . . . LOCK CHECK
+const TWO_MINUTES = 2 * 60 * 1000 // 2 minutes in milliseconds
+let CURRENT_TIME
+
+const checkLockExpiration = () => {
+   CURRENT_TIME = new Date().getTime()
+   if (!parameters.value || parameters.value.length === 0) return
+
+   parameters.value.forEach((parameter) => {
+      if (
+         parameter &&
+         parameter.id &&
+         parameter.lockedAt &&
+         parameter.lockedBy === auth.currentUser?.uid
+      ) {
+         const lockedTime = parameter.lockedAt.toDate().getTime()
+         const timeDiff = CURRENT_TIME - lockedTime
+
+         if (timeDiff >= TWO_MINUTES) {
+            // If time is up, unlock the parameter and close modals if this parameter was being edited
+            unlockParameter(parameter).then(() => {
+               if (editingParameter.value?.id === parameter.id) {
+                  showDrawer.value = false
+                  showDeleteModal.value = false
+                  editingParameter.value = null
+               }
+            })
+         }
+      }
+   })
+}
+
 // . . . INIT // REALTIME DATABASE LISTENER
 onMounted(() => {
    isLoading.value = true
@@ -211,16 +245,22 @@ onMounted(() => {
       }
    )
    window.addEventListener('resize', handleResize)
+   lockCheckInterval = setInterval(checkLockExpiration, 3000) // Check every 30 seconds
 })
 
 onUnmounted(() => {
+   if (lockCheckInterval) {
+      clearInterval(lockCheckInterval)
+   }
    if (unsubscribe) {
       unsubscribe()
    }
    window.removeEventListener('resize', handleResize)
 })
 
-const unlockParameter = async (parameter, action) => {
+const unlockParameter = async (parameter) => {
+   if (!parameter || !parameter.id) return
+
    try {
       await $http.put(`/parameters/${parameter.id}/unlock`)
    } catch (error) {
