@@ -6,6 +6,7 @@ import {
    signInWithCustomToken,
 } from 'firebase/auth'
 import { useRouter } from 'vue-router'
+import $http from '../api/axios'
 
 const email = ref('')
 const password = ref('')
@@ -17,22 +18,13 @@ const date = new Date()
 const isLoading = ref(false)
 
 const getCustomToken = async (uid) => {
-   const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/token`, {
-      method: 'POST',
-      headers: {
-         'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ uid }),
-   })
-
-   if (!response.ok) {
-      const error = await response.json()
+   try {
+      const response = await $http.post('/auth/token', { uid })
+      return response.data.customToken
+   } catch (error) {
       console.error('Token error:', error)
       throw new Error('Failed to get custom token')
    }
-
-   const { customToken } = await response.json()
-   return customToken
 }
 
 const signIn = async () => {
