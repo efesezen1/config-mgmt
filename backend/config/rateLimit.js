@@ -9,15 +9,6 @@ const globalLimiter = rateLimit({
    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 })
 
-// Auth specific rate limiter
-const authLimiter = rateLimit({
-   windowMs: 60 * 60 * 1000, // 1 hour
-   max: 15, // Limit each IP to 15 login requests per hour
-   message: 'Too many authentication attempts, please try again after an hour',
-   standardHeaders: true,
-   legacyHeaders: false,
-})
-
 // Parameters operations rate limiter
 const parameterLimiter = rateLimit({
    windowMs: 60 * 1000, // 1 minute
@@ -29,6 +20,5 @@ const parameterLimiter = rateLimit({
 
 module.exports = {
    globalLimiter,
-   authLimiter,
    parameterLimiter,
 }

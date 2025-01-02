@@ -1,7 +1,7 @@
 const express = require('express')
 const admin = require('../config/firebase')
 const authenticateJWT = require('../middlewares/authenticateJWT')
-const { authLimiter, parameterLimiter } = require('../config/rateLimit')
+const {  parameterLimiter } = require('../config/rateLimit')
 
 const router = express.Router()
 
@@ -11,21 +11,8 @@ const db = admin.firestore()
 // Constants
 const PARAMETERS_COLLECTION = 'parameters'
 
-// Auth endpoint with specific rate limit
-router.post('/auth/token', authLimiter, async (req, res) => {
-   try {
-      const { uid } = req.body
-      if (!uid) {
-         return res.status(400).json({ error: 'UID is required' })
-      }
 
-      const customToken = await admin.auth().createCustomToken(uid)
-      res.json({ customToken })
-   } catch (error) {
-      console.error('Error creating custom token:', error)
-      res.status(500).json({ error: 'Failed to create custom token' })
-   }
-})
+
 
 // Parameters endpoints with specific rate limit
 router.use('/parameters', parameterLimiter)

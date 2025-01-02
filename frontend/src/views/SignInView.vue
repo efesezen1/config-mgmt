@@ -1,12 +1,7 @@
 <script setup>
 import { ref } from 'vue'
-import {
-   getAuth,
-   signInWithEmailAndPassword,
-   signInWithCustomToken,
-} from 'firebase/auth'
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
 import { useRouter } from 'vue-router'
-import $http from '../api/axios'
 
 const email = ref('')
 const password = ref('')
@@ -16,23 +11,6 @@ const emailInput = ref(null)
 const passwordInput = ref(null)
 const date = new Date()
 const isLoading = ref(false)
-
-const getCustomToken = async (uid) => {
-   try {
-      console.log('API URL:', import.meta.env.VITE_APP_API_URL)
-
-      const response = await $http.post('/auth/token', { uid })
-      return response.data.customToken
-   } catch (error) {
-      console.error('Token error details:', {
-         message: error.message,
-         response: error.response?.data,
-         status: error.response?.status,
-         url: error.config?.url,
-      })
-      throw new Error('Failed to get custom token')
-   }
-}
 
 const signIn = async () => {
    isLoading.value = true
