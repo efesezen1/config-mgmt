@@ -51,7 +51,7 @@
                            @click="$emit('initialized', parameter, btn.action)"
                            :disabled="isParameterLocked(parameter)"
                            :loading="loadingStates[`${parameter.id}-${btn.action}`]"
-                           v-tooltip.bottom="btn.tooltip"
+                           v-tooltip.bottom="btn.label"
                         />
                      </div>
                   </td>

@@ -86,10 +86,12 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { throttle, generateUUID, localizedDate } from '../utils'
-import ParameterTable from './ParameterTable.vue'
-import ParameterCard from './ParameterCard.vue'
-import Navbar from '../components/Navbar.vue'
-import LockStatus from '../components/LockStatus.vue'
+import {
+   ParameterCard,
+   ParameterTable,
+   Navbar,
+   LockStatus,
+} from '../components'
 import { useToast } from 'primevue/usetoast'
 import $http from '../api/axios'
 import { collection, onSnapshot, query } from 'firebase/firestore'
@@ -135,14 +137,12 @@ const actionButtons = ref([
       action: 'edit',
       icon: 'pi pi-pencil',
       severity: 'info',
-      tooltip: 'Edit',
       label: 'Edit',
    },
    {
       action: 'delete',
       icon: 'pi pi-trash',
       severity: 'danger',
-      tooltip: 'Delete',
       label: 'Delete',
    },
 ])
@@ -178,7 +178,7 @@ const handleSubmit = async () => {
    try {
       isProcessing.value = true
       if (isEditing.value) {
-         await onEditSave(editingParameter.value)
+         await saveEdit(editingParameter.value)
       } else {
          await addParameter(editingParameter.value)
       }
@@ -328,7 +328,6 @@ const onParameterInitialized = async (parameter, action) => {
          startAdding()
          return
       }
-
       if (parameter) {
          loadingStates.value[`${parameter.id}-${action}`] = true
       }
@@ -350,7 +349,7 @@ const onParameterInitialized = async (parameter, action) => {
 
 // . . . DATABASE OPERATIONS
 // . . . EDIT
-const onEditSave = async (editedParameter) => {
+const saveEdit = async (editedParameter) => {
    try {
       await $http.put(`/parameters/${editedParameter.id}`, {
          key: editedParameter.key,
