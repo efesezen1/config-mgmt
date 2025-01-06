@@ -48,11 +48,9 @@
                            :severity="btn.severity"
                            rounded
                            size="small"
-                           @click="btn.handler(parameter)"
+                           @click="$emit('initialized', parameter, btn.action)"
                            :disabled="isParameterLocked(parameter)"
-                           :loading="
-                              loadingStates[`${parameter.id}-${btn.action}`]
-                           "
+                           :loading="loadingStates[`${parameter.id}-${btn.action}`]"
                            v-tooltip.bottom="btn.tooltip"
                         />
                      </div>
@@ -75,14 +73,14 @@
                v-for="col in columns.filter((c) => c.editable)"
                :key="col.field"
                class="input-style rounded flex-1"
-               v-model="newParameterModel[col.field]"
+               v-model="newParameter[col.field]"
                :placeholder="col.header"
             />
             <Button
                label="Add"
                icon="pi pi-plus"
                size="large"
-               @click="$emit('add', newParameterModel)"
+               @click="$emit('add', newParameter)"
                :loading="isProcessing"
             />
          </div>
@@ -113,8 +111,18 @@ const props = defineProps({
       type: Boolean,
       default: false,
    },
+   actionButtons: {
+      type: Array,
+      required: true,
+   },
+})
+const newParameter = ref({
+   key: '',
+   value: '',
+   description: '',
 })
 
+const sortOrder = ref('regular') // 'regular', 'asc', 'desc'
 const displayedParameters = computed(() => {
    if (sortOrder.value === 'regular') {
       return props.parameters
@@ -127,16 +135,6 @@ const displayedParameters = computed(() => {
    })
 })
 
-const newParameterModel = defineModel('newParameter', {
-   default: {
-      key: '',
-      value: '',
-      description: '',
-   },
-})
-
-const sortOrder = ref('regular') // 'regular', 'asc', 'desc'
-
 const toggleSort = () => {
    if (sortOrder.value === 'regular') {
       sortOrder.value = 'asc'
@@ -147,30 +145,7 @@ const toggleSort = () => {
    }
 }
 
-const emit = defineEmits(['initialized'])
-const onEdit = async (parameter) => {
-   emit('initialized', parameter, 'edit')
-}
-
-const onDelete = (parameter) => {
-   emit('initialized', parameter, 'delete')
-}
-const actionButtons = ref([
-   {
-      action: 'edit',
-      icon: 'pi pi-pencil',
-      severity: 'info',
-      handler: onEdit,
-      tooltip: 'Edit',
-   },
-   {
-      action: 'delete',
-      icon: 'pi pi-trash',
-      severity: 'danger',
-      handler: onDelete,
-      tooltip: 'Delete',
-   },
-])
+const emit = defineEmits(['initialized', 'add'])
 </script>
 
 <style scoped>

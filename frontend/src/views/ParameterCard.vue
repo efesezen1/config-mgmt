@@ -32,22 +32,15 @@
             </div>
             <div class="flex flex-row gap-2 w-full">
                <Button
-                  icon="pi pi-pencil"
-                  label="Edit"
-                  severity="info"
-                  @click="$emit('initialized', parameter, 'edit')"
+                  v-for="btn in actionButtons"
+                  :key="btn.action"
+                  :icon="btn.icon"
+                  :label="btn.label"
+                  :severity="btn.severity"
+                  @click="$emit('initialized', parameter, btn.action)"
                   class="w-full justify-center"
                   :disabled="isParameterLocked(parameter)"
-                  :loading="loadingStates[`${parameter.id}-edit`]"
-               />
-               <Button
-                  :disabled="isParameterLocked(parameter)"
-                  icon="pi pi-trash"
-                  label="Delete"
-                  severity="danger"
-                  @click="$emit('initialized', parameter, 'delete')"
-                  class="w-full justify-center"
-                  :loading="loadingStates[`${parameter.id}-delete`]"
+                  :loading="loadingStates[`${parameter.id}-${btn.action}`]"
                />
             </div>
          </div>
@@ -64,7 +57,6 @@
 </template>
 
 <script setup>
-
 const props = defineProps({
    parameters: {
       type: Array,
@@ -79,8 +71,12 @@ const props = defineProps({
    },
    loadingStates: {
       type: Object,
-      required: true
-   }
+      required: true,
+   },
+   actionButtons: {
+      type: Array,
+      required: true,
+   },
 })
 
 const emit = defineEmits(['initialized'])

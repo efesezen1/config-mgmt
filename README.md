@@ -1,4 +1,4 @@
-**# Parameter Management System
+### Parameter Management System
 
 A full-stack web application for managing version control configurations. This project consists of a Vue.js frontend and Node.js/Express backend, with Firebase integration for data storage and authentication.
 
@@ -146,13 +146,6 @@ You'll also need to set up `serviceAccountKey.json` for Firebase authentication.
 ## API Endpoints
 
 All API endpoints are prefixed with `/api/v1` and require authentication unless specified otherwise.
-
-### Authentication
-- `POST /auth/token`
-  - Generate a custom authentication token
-  - Body: `{ "uid": string }`
-  - No authentication required
-  - Rate limited
 
 ### Parameters
 All parameter endpoints are rate limited.
