@@ -2,6 +2,47 @@
 
 A full-stack web application for managing version control configurations. This project consists of a Vue.js frontend and Node.js/Express backend, with Firebase integration for data storage and authentication.
 
+## Demo URLs
+Demo links are provided for both the frontend and backend of the application. You can use these links to explore and test the application's functionality.
+
+Frontend URL: [Panel](https://cwconfigpanel.netlify.app/)
+This is the main user interface where users can interact with the application.
+
+User credentials are as following:
+1. User 1
+   Email: jane@doe.com
+   Password: 123123
+2. User 2
+   Email: john@doe.com
+   Password: 123123
+
+Backend URL: [Backend](https://case-study01-79f64e6c9c33.herokuapp.com/)
+This is the API endpoint where the server processes requests. Use tools like Postman or cURL to test these endpoints. 
+To access the backend API, you'll need to authenticate using a JWT (JSON Web Token) from Firebase Authentication. Follow these steps to obtain the token and include it in your requests:
+
+1. Obtain a JWT
+Sign in to the frontend application: Use the login functionality provided in the frontend to authenticate with Firebase.
+
+Retrieve the JWT: Once authenticated, Firebase will issue a JWT. You can retrieve it using Firebase's client SDK.
+
+In JavaScript:
+
+```javascript
+import { getAuth } from "firebase/auth";
+
+const auth = getAuth();
+auth.currentUser.getIdToken(/* forceRefresh */ true).then((token) => {
+  console.log("JWT Token:", token);
+}).catch((error) => {
+  console.error("Error getting token:", error);
+});
+```
+2. Include the JWT in Backend Requests
+Add the JWT to the Authorization header of your backend API requests in the following format:
+```makefile
+Authorization: Bearer <JWT_TOKEN>
+```
+
 ## Features
 
 - User authentication with Firebase
@@ -20,7 +61,8 @@ A full-stack web application for managing version control configurations. This p
 - Firebase Authentication
 - Axios for API calls
 - TailwindCSS for styling
-- ## 🏗 Project Structure
+
+ ## 🏗 Project Structure
 
 ```
 .
