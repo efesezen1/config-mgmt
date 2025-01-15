@@ -7,11 +7,7 @@ import './config/firebase'
 import {
    PrimeVue,
    Aura,
-   DataTable,
-   Column,
-   ColumnGroup,
-   Row,
-   InputText,
+
    Button,
    Drawer,
    ToastService,
@@ -28,11 +24,7 @@ app.use(router)
       },
    })
    .use(ToastService)
-   .component('DataTable', DataTable)
-   .component('Column', Column)
-   .component('ColumnGroup', ColumnGroup)
-   .component('Row', Row)
-   .component('InputText', InputText)
+
    .component('Button', Button)
    .component('Drawer', Drawer)
    .component('Toast', Toast)

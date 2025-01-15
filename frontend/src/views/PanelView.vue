@@ -14,13 +14,13 @@
          :is="currentComponent"
          ref="componentRef"
          :parameters="parameters"
-         v-model:newParameter="newParameter"
          @initialized="onParameterInitialized"
          @add="addParameter"
          :columns="columns"
-         :isParameterLocked="isParameterLocked"
+         :isParameterLocked="lockMng.isLocked"
          :loading-states="loadingStates"
          :is-processing="isProcessing"
+         :action-buttons="actionButtons"
       />
    </div>
    <Drawer
@@ -54,7 +54,8 @@
       </div>
       <template #footer>
          <LockStatus
-            :is-locked="isParameterLocked(editingParameter)"
+            v-if="screenWidth >= BREAKPOINT_MD || isEditing"
+            :is-locked="lockMng.isLocked(editingParameter)"
             :formatted-time="formattedTimeRemaining"
          />
       </template>
@@ -64,12 +65,13 @@
       header="Confirm Delete"
       :modal="true"
       class="bg-slate-900"
+      :closable="false"
    >
       <div class="flex flex-col gap-4">
          <p>Are you sure you want to delete this parameter?</p>
          <div class="flex justify-between items-center">
             <LockStatus
-               :is-locked="isParameterLocked(editingParameter)"
+               :is-locked="lockMng.isLocked(editingParameter)"
                :formatted-time="formattedTimeRemaining"
             />
             <div class="flex justify-end gap-2">
@@ -82,158 +84,134 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
-import { throttle, generateUUID, localizedDate } from '../utils'
-import ParameterTable from './ParameterTable.vue'
-import ParameterCard from './ParameterCard.vue'
-import Navbar from '../components/Navbar.vue'
-import LockStatus from '../components/LockStatus.vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { generateUUID, localizedDate, LockManager, throttle } from '../utils'
+import {
+   LockStatus,
+   Navbar,
+   ParameterCard,
+   ParameterTable,
+} from '../components'
 import { useToast } from 'primevue/usetoast'
 import $http from '../api/axios'
 import { collection, onSnapshot, query } from 'firebase/firestore'
-import { db, auth } from '../config/firebase'
+import { auth, db } from '../config/firebase'
 
-const showDeleteModal = ref(false)
-const BREAKPOINT_MD = 768 // Standard medium breakpoint
-let PARAMETERS_COLLECTION = 'parameters'
-const screenWidth = ref(window.innerWidth)
-const currentComponent = computed(() => {
-   return screenWidth.value < BREAKPOINT_MD ? ParameterCard : ParameterTable
-}) // Dynamic component
-const parameters = ref([]) // Parameters list rendered on the screen
-const isLoading = ref(false)
-const newParameter = ref({
-   key: '',
-   value: '',
-   description: '',
-})
-const parameterToDelete = ref(null)
-const componentRef = ref(null)
-const showDrawer = ref(false)
-// . . . EDIT DATA VIEWS BY THESE PARAMETERS
-const columns = [
-   {
-      field: 'key',
-      header: 'Parameter Key',
-      editable: true,
-      inputHeader: 'New Parameter',
+let CURRENT_TIME,
+   unsubscribe = null,
+   lockCheckInterval = null
+const PARAMETERS_COLLECTION = 'parameters',
+   INITIAL_ITEM = { id: '', key: '', value: '', description: '' },
+   BREAKPOINT_MD = 768, // Standard medium breakpoint,
+   TWO_MINUTES = 2 * 60 * 1000,
+   initToast = (action, message) => {
+      toast.add({
+         severity: action,
+         summary: action[0].toUpperCase() + action.slice(1),
+         detail: message,
+         life: 3000,
+      })
    },
-   { field: 'value', header: 'Value', editable: true, inputHeader: 'Value' },
-   {
-      field: 'description',
-      header: 'Description',
-      editable: true,
-      inputHeader: 'New Description',
-   },
-   {
-      field: 'createdAt',
-      header: 'Create Date',
-      sortable: true,
-      editable: false,
-   },
-]
-
-const editingParameter = ref({
-   id: '',
-   key: '',
-   value: '',
-   description: '',
-})
-const isEditing = ref(false)
-const toast = useToast()
-const loadingStates = ref({})
-const isProcessing = ref(false)
+   currentComponent = computed(() => {
+      return screenWidth.value < BREAKPOINT_MD ? ParameterCard : ParameterTable
+   }), // Dynamic component
+   // UI Controllers
+   showDeleteModal = ref(false),
+   isLoading = ref(false),
+   isEditing = ref(false),
+   isProcessing = ref(false),
+   showDrawer = ref(false),
+   screenWidth = ref(window.innerWidth),
+   lockMng = new LockManager(initToast), // Lock manager instantiation
+   parameters = ref([]), // Parameters list rendered on the screen.
+   parameterToDelete = ref(null),
+   componentRef = ref(null), //Dynamic component variable, its value determined based on screen width.
+   timeRemaining = ref(TWO_MINUTES),
+   // . . . EDIT DATA VIEWS BY THESE PARAMETERS
+   columns = [
+      {
+         field: 'key',
+         header: 'Parameter Key',
+         editable: true,
+         inputHeader: 'New Parameter',
+      },
+      { field: 'value', header: 'Value', editable: true, inputHeader: 'Value' },
+      {
+         field: 'description',
+         header: 'Description',
+         editable: true,
+         inputHeader: 'New Description',
+      },
+      {
+         field: 'createdAt',
+         header: 'Create Date',
+         sortable: true,
+         editable: false,
+      },
+   ],
+   actionButtons = [
+      {
+         action: 'edit',
+         icon: 'pi pi-pencil',
+         severity: 'info',
+         label: 'Edit',
+      },
+      {
+         action: 'delete',
+         icon: 'pi pi-trash',
+         severity: 'danger',
+         label: 'Delete',
+      },
+   ],
+   editingParameter = ref({
+      ...INITIAL_ITEM,
+   }),
+   toast = useToast(),
+   loadingStates = ref({})
 
 watch(isEditing, (x) => {
    if (!x) {
-      editingParameter.value = { id: '', key: '', value: '', description: '' }
+      editingParameter.value = { ...INITIAL_ITEM }
    }
 })
 
 watch(showDrawer, (visible) => {
    if (visible && !isEditing.value) {
-      editingParameter.value = { id: '', key: '', value: '', description: '' }
+      editingParameter.value = { ...INITIAL_ITEM }
    } else if (!visible && isEditing.value) {
-      unlockParameter(editingParameter.value, 'edit')
+      lockMng.unlock(editingParameter.value, 'edit')
+   }
+   if (!visible) {
+      timeRemaining.value = 0
       isEditing.value = false
-      editingParameter.value = { id: '', key: '', value: '', description: '' }
+      editingParameter.value = { ...INITIAL_ITEM }
    }
 })
-
-const startEditing = (parameter) => {
-   isEditing.value = true
-   editingParameter.value = { ...parameter }
-   showDrawer.value = true
-}
 
 const handleSubmit = async () => {
-   try {
-      isProcessing.value = true
-      if (isEditing.value) {
-         await onEditSave(editingParameter.value)
-      } else {
-         await addParameter(editingParameter.value)
-      }
-      showDrawer.value = false
-   } catch (error) {
-      toast.add({
-         severity: 'error',
-         summary: 'Error',
-         detail: error.message,
-         life: 3000,
-      })
-   } finally {
-      isProcessing.value = false
-   }
-}
-let unsubscribe = null
-
-const formattedTimeRemaining = computed(() => {
-   const totalSeconds = Math.max(0, Math.floor(timeRemaining.value / 1000))
-   const minutes = Math.floor(totalSeconds / 60)
-   const seconds = totalSeconds % 60
-   return `${minutes}:${seconds.toString().padStart(2, '0')}`
-})
-
-const handleResize = throttle(() => {
-   screenWidth.value = window.innerWidth
-}, 200) // 200ms throttle delay
-
-let lockCheckInterval = null
-
-// . . . LOCK CHECK
-const TWO_MINUTES = 2 * 60 * 1000
-let CURRENT_TIME
-const timeRemaining = ref(TWO_MINUTES)
-const checkLockExpiration = () => {
-   CURRENT_TIME = new Date().getTime()
-   if (!parameters.value || parameters.value.length === 0) return
-
-   parameters.value.forEach((parameter) => {
-      if (
-         parameter &&
-         parameter.id &&
-         parameter.lockedAt &&
-         parameter.lockedBy === auth.currentUser?.uid
-      ) {
-         const lockedTime = parameter.lockedAt.toDate().getTime()
-         const timeDiff = CURRENT_TIME - lockedTime
-
-         timeRemaining.value = TWO_MINUTES - timeDiff
-
-         if (timeDiff >= TWO_MINUTES) {
-            // If time is up, unlock the parameter and close modals if this parameter was being edited
-            unlockParameter(parameter).then(() => {
-               if (editingParameter.value?.id === parameter.id) {
-                  showDrawer.value = false
-                  showDeleteModal.value = false
-                  editingParameter.value = null
-               }
-            })
+      try {
+         isProcessing.value = true
+         if (isEditing.value) {
+            await saveEdit(editingParameter.value)
+         } else {
+            await addParameter(editingParameter.value)
          }
+         showDrawer.value = false
+      } catch (error) {
+         initToast('error', error.message)
+      } finally {
+         isProcessing.value = false
       }
-   })
-}
+   },
+   formattedTimeRemaining = computed(() => {
+      const totalSeconds = Math.max(0, Math.floor(timeRemaining.value / 1000)),
+         minutes = Math.floor(totalSeconds / 60),
+         seconds = totalSeconds % 60
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`
+   }),
+   handleResize = throttle(() => {
+      screenWidth.value = window.innerWidth
+   }, 200) // 200ms throttle delay
 
 // . . . INIT // REALTIME DATABASE LISTENER
 onMounted(() => {
@@ -253,16 +231,13 @@ onMounted(() => {
       },
       (error) => {
          console.error('Error fetching parameters:', error)
-         toast.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to fetch parameters',
-            life: 3000,
-         })
+         initToast('error', 'Failed to fetch parameters')
          isLoading.value = false
       }
    )
+   // . . . RESIZE LISTENER
    window.addEventListener('resize', handleResize)
+   // . . . LOCK CHECK
    lockCheckInterval = setInterval(checkLockExpiration, 1000) // Check every 1 seconds
 })
 
@@ -276,36 +251,48 @@ onUnmounted(() => {
    window.removeEventListener('resize', handleResize)
 })
 
-const unlockParameter = async (parameter) => {
-   if (!parameter || !parameter.id) return
+// . . . LOCK OPERATION
+const checkLockExpiration = () => {
+   CURRENT_TIME = new Date().getTime()
+   if (!parameters.value || parameters.value.length === 0) return
 
-   try {
-      await $http.put(`/parameters/${parameter.id}/unlock`)
-   } catch (error) {
-      console.error('Error unlocking parameter:', error)
-      toast.add({
-         severity: 'error',
-         summary: 'Error',
-         detail: 'Failed to unlock parameter',
-         life: 3000,
-      })
-   }
+   parameters.value.forEach((parameter) => {
+      if (
+         parameter &&
+         parameter.id &&
+         parameter.lockedAt &&
+         parameter.lockedBy === auth.currentUser?.uid
+      ) {
+         const lockedTime = parameter.lockedAt.toDate().getTime(),
+            timeDiff = CURRENT_TIME - lockedTime
+
+         timeRemaining.value = TWO_MINUTES - timeDiff
+
+         if (timeDiff >= TWO_MINUTES) {
+            // If time is up, unlock the parameter and close modals if this parameter was being edited
+            lockMng.unlock(parameter).then(() => {
+               if (editingParameter.value?.id === parameter.id) {
+                  showDrawer.value = false
+                  showDeleteModal.value = false
+                  editingParameter.value = null
+               }
+            })
+         }
+      }
+   })
 }
 
-const lockParameter = async (parameter, action) => {
+// . . .ACTION HANDLERS
+const onParameterInitialized = async (parameter, action) => {
    try {
-      await $http.put(`/parameters/${parameter.id}/lock`)
-      toast.add({
-         severity: 'success',
-         summary: 'Success',
-         detail:
-            action === 'edit'
-               ? 'Parameter locked successfully, you can edit now.'
-               : 'Parameter locked successfully, confirm deletion.',
-         life: 3000,
-      })
-
-      // If we're in card view and it's an edit action, start editing
+      if (action === 'add') {
+         startAdding()
+         return
+      }
+      if (parameter) {
+         loadingStates.value[`${parameter.id}-${action}`] = true
+      }
+      await lockMng.lock(parameter, action)
       if (action === 'edit') {
          startEditing(parameter)
       }
@@ -313,48 +300,7 @@ const lockParameter = async (parameter, action) => {
          startDeleting(parameter)
       }
    } catch (error) {
-      console.error('Error locking parameter:', error)
-      toast.add({
-         severity: 'error',
-         summary: 'Error',
-         detail: 'Failed to lock parameter',
-         life: 3000,
-      })
-      throw error // Re-throw to prevent editing in table view
-   }
-}
-
-const startAdding = () => {
-   isEditing.value = false
-   editingParameter.value = { id: '', key: '', value: '', description: '' }
-   showDrawer.value = true
-}
-
-const onParameterInitialized = async (parameter, action) => {
-   try {
-      if (action === 'add') {
-         startAdding()
-         return
-      }
-
-      if (parameter) {
-         loadingStates.value[`${parameter.id}-${action}`] = true
-      }
-      const isLocked = await lockParameter(parameter, action)
-      if (isLocked) {
-         if (action === 'edit') {
-            startEditing(parameter)
-         } else if (action === 'delete') {
-            startDeleting(parameter)
-         }
-      }
-   } catch (error) {
-      toast.add({
-         severity: 'error',
-         summary: 'Error',
-         detail: error.message,
-         life: 3000,
-      })
+      initToast('error', error.message)
    } finally {
       if (parameter) {
          loadingStates.value[`${parameter.id}-${action}`] = false
@@ -362,124 +308,84 @@ const onParameterInitialized = async (parameter, action) => {
    }
 }
 
-const isParameterLocked = (parameter) => {
-   if (!parameter || !parameter.isLocked) return false
-   return parameter.isLocked && parameter.lockedBy !== auth.currentUser?.uid
-}
-
 // . . . DATABASE OPERATIONS
 // . . . EDIT
-const onEditSave = async (editedParameter) => {
-   try {
-      await $http.put(`/parameters/${editedParameter.id}`, {
-         key: editedParameter.key,
-         value: editedParameter.value,
-         description: editedParameter.description,
-      })
-      toast.add({
-         severity: 'success',
-         summary: 'Success',
-         detail: 'Parameter updated successfully',
-         life: 3000,
-      })
-   } catch (error) {
-      console.error('Error updating parameter:', error)
-      toast.add({
-         severity: 'error',
-         summary: 'Error',
-         detail: 'Failed to update parameter',
-         life: 3000,
-      })
-   }
-}
-
-// . . . DELETE
-const deleteParameter = async (param) => {
-   try {
-      await $http.delete(`/parameters/${param.id}`)
-      toast.add({
-         severity: 'success',
-         summary: 'Success',
-         detail: 'Parameter deleted successfully',
-         life: 3000,
-      })
-   } catch (error) {
-      console.error('Error deleting parameter:', error)
-      toast.add({
-         severity: 'error',
-         summary: 'Error',
-         detail: 'Failed to delete parameter',
-         life: 3000,
-      })
-   }
-}
-
-// . . . ADD
-const addParameter = async (parameter) => {
-   try {
-      isProcessing.value = true
-      if (!parameter.key || !parameter.value) {
-         toast.add({
-            severity: 'warn',
-            summary: 'Warning',
-            detail: 'Key and Value fields are required',
-            life: 3000,
+const saveEdit = async (editedParameter) => {
+      try {
+         await $http.put(`/parameters/${editedParameter.id}`, {
+            key: editedParameter.key,
+            value: editedParameter.value,
+            description: editedParameter.description,
          })
-         return
+         initToast('success', 'Parameter updated successfully')
+      } catch (error) {
+         console.error('Error updating parameter:', error)
+         initToast('error', 'Failed to update parameter')
       }
-
-      await $http.post('/parameters', {
-         key: parameter.key,
-         value: parameter.value,
-         description: parameter.description || '',
-         id: generateUUID(),
-      })
-
-      // Reset the appropriate form based on view
-      if (screenWidth.value < BREAKPOINT_MD) {
-         editingParameter.value = {
-            id: '',
-            key: '',
-            value: '',
-            description: '',
+   },
+   // . . . DELETE
+   deleteParameter = async (param) => {
+      try {
+         await $http.delete(`/parameters/${param.id}`)
+         initToast('success', 'Parameter deleted successfully')
+      } catch (error) {
+         console.error('Error deleting parameter:', error)
+         initToast('error', 'Failed to delete parameter')
+      }
+   },
+   // . . . ADD
+   addParameter = async (parameter) => {
+      try {
+         isProcessing.value = true
+         if (!parameter.key || !parameter.value) {
+            initToast('warn', 'Key and Value fields are required')
+            return
          }
-      } else {
-         newParameter.value = { key: '', value: '', description: '' }
+
+         await $http.post('/parameters', {
+            key: parameter.key,
+            value: parameter.value,
+            description: parameter.description || '',
+            id: generateUUID(),
+         })
+
+         editingParameter.value = {
+            ...INITIAL_ITEM,
+         }
+
+         initToast('success', 'Parameter added successfully')
+      } catch (error) {
+         console.error('Error adding parameter:', error)
+         initToast('error', 'Failed to add parameter')
+      } finally {
+         isProcessing.value = false
       }
-
-      toast.add({
-         severity: 'success',
-         summary: 'Success',
-         detail: 'Parameter added successfully',
-         life: 3000,
-      })
-   } catch (error) {
-      console.error('Error adding parameter:', error)
-      toast.add({
-         severity: 'error',
-         summary: 'Error',
-         detail: 'Failed to add parameter',
-         life: 3000,
-      })
-   } finally {
-      isProcessing.value = false
+   },
+   // ... INITIALIZERS
+   startEditing = (parameter) => {
+      isEditing.value = true
+      editingParameter.value = { ...parameter }
+      showDrawer.value = true
+   },
+   startDeleting = (parameter) => {
+      showDrawer.value = false
+      showDeleteModal.value = true
+      parameterToDelete.value = parameter
+   },
+   startAdding = () => {
+      isEditing.value = false
+      editingParameter.value = { ...INITIAL_ITEM }
+      showDrawer.value = true
+   },
+   // . . . CONFIRMATION MECHANISMS
+   cancelDelete = () => {
+      showDeleteModal.value = false
+      parameterToDelete.value = null
+      lockMng.unlock(parameterToDelete.value, 'delete')
+   },
+   confirmDelete = () => {
+      deleteParameter(parameterToDelete.value)
+      showDeleteModal.value = false
+      parameterToDelete.value = null
    }
-}
-
-const cancelDelete = () => {
-   showDeleteModal.value = false
-   unlockParameter(parameterToDelete.value, 'delete')
-   parameterToDelete.value = null
-}
-
-const confirmDelete = () => {
-   deleteParameter(parameterToDelete.value)
-   showDeleteModal.value = false
-   parameterToDelete.value = null
-}
-const startDeleting = (parameter) => {
-   showDrawer.value = false
-   showDeleteModal.value = true
-   parameterToDelete.value = parameter
-}
 </script>

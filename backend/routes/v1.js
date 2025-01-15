@@ -1,7 +1,7 @@
 const express = require('express')
 const admin = require('../config/firebase')
 const authenticateJWT = require('../middlewares/authenticateJWT')
-const {  parameterLimiter } = require('../config/rateLimit')
+const { parameterLimiter } = require('../config/rateLimit')
 
 const router = express.Router()
 
@@ -10,9 +10,6 @@ const db = admin.firestore()
 
 // Constants
 const PARAMETERS_COLLECTION = 'parameters'
-
-
-
 
 // Parameters endpoints with specific rate limit
 router.use('/parameters', parameterLimiter)
@@ -179,6 +176,21 @@ router.put('/parameters/:id/unlock', authenticateJWT, async (req, res) => {
    } catch (error) {
       console.error('Error unlocking parameter:', error)
       res.status(500).json({ error: 'Failed to unlock parameter' })
+   }
+})
+
+router.get('/client', authenticateJWT, async (req, res) => {
+   try {
+      const snapshot = await db.collection(PARAMETERS_COLLECTION).get()
+      const pair = {}
+      const parameters = snapshot.docs.map((doc) => doc.data())
+      parameters.forEach((param) => {
+         pair[param.key] = param.value
+      })
+      res.json({ message: pair })
+   } catch (error) {
+      console.error('Error retrieving parameters:', error)
+      res.status(500).json({ error: 'Failed to retrieve parameters' })
    }
 })
 
