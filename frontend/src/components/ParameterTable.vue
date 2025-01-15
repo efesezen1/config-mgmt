@@ -89,66 +89,66 @@
 </template>
 
 <script setup>
-import {ref, computed} from 'vue'
+import {computed, ref} from 'vue'
 
 const INITIAL_ITEM = {
-  key: '',
-  value: '',
-  description: '',
-}
-const props = defineProps({
-  parameters: {
-    type: Array,
-    required: true,
-  },
-  columns: {
-    type: Array,
-    required: true,
-  },
-  isParameterLocked: {
-    type: Function,
-  },
-  loadingStates: {
-    type: Object,
-    required: true,
-  },
-  isProcessing: {
-    type: Boolean,
-    default: false,
-  },
-  actionButtons: {
-    type: Array,
-    required: true,
-  },
-})
-const newParameter = ref({
-  ...INITIAL_ITEM
-})
+      key: '',
+      value: '',
+      description: '',
+    },
+    newParameter = ref({
+      ...INITIAL_ITEM
+    }),
+    props = defineProps({
+      parameters: {
+        type: Array,
+        required: true,
+      },
+      columns: {
+        type: Array,
+        required: true,
+      },
+      isParameterLocked: {
+        type: Function,
+      },
+      loadingStates: {
+        type: Object,
+        required: true,
+      },
+      isProcessing: {
+        type: Boolean,
+        default: false,
+      },
+      actionButtons: {
+        type: Array,
+        required: true,
+      },
+    }),
 
-const sortOrder = ref('regular') // 'regular', 'asc', 'desc'
-const displayedParameters = computed(() => {
-  if (sortOrder.value === 'regular') {
-    return props.parameters
-  }
 
-  return [...props.parameters].sort((a, b) => {
-    const dateA = new Date(a.createdAt)
-    const dateB = new Date(b.createdAt)
-    return sortOrder.value === 'asc' ? dateA - dateB : dateB - dateA
-  })
-})
+    sortOrder = ref('regular'), // 'regular', 'asc', 'desc'
+    displayedParameters = computed(() => {
+      if (sortOrder.value === 'regular') {
+        return props.parameters
+      }
 
-const toggleSort = () => {
-  if (sortOrder.value === 'regular') {
-    sortOrder.value = 'asc'
-  } else if (sortOrder.value === 'asc') {
-    sortOrder.value = 'desc'
-  } else {
-    sortOrder.value = 'regular'
-  }
-}
+      return [...props.parameters].sort((a, b) => {
+        const dateA = new Date(a.createdAt)
+        const dateB = new Date(b.createdAt)
+        return sortOrder.value === 'asc' ? dateA - dateB : dateB - dateA
+      })
+    }),
 
-const emit = defineEmits(['initialized', 'add'])
+    toggleSort = () => {
+      if (sortOrder.value === 'regular') {
+        sortOrder.value = 'asc'
+      } else if (sortOrder.value === 'asc') {
+        sortOrder.value = 'desc'
+      } else {
+        sortOrder.value = 'regular'
+      }
+    }
+defineEmits(['initialized', 'add'])
 </script>
 
 <style scoped>
