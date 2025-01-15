@@ -2,7 +2,6 @@ const express = require('express')
 const admin = require('../config/firebase')
 const authenticateJWT = require('../middlewares/authenticateJWT')
 const { parameterLimiter } = require('../config/rateLimit')
-
 const router = express.Router()
 
 // Initialize Firestore
