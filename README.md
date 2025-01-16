@@ -230,6 +230,17 @@ All endpoints return JSON responses with the following structure:
 - 429: Too Many Requests (Rate limit exceeded)
 - 500: Internal Server Error
 
+## 📸 Screenshots
+
+### Sign In Page
+![Sign In Page](/frontend/public/signin.jpeg)
+
+### Desktop View
+![Desktop View](/frontend/public/image.png)
+
+### Mobile View
+![Mobile View](/frontend/public/mobile.jpeg)
+
 ## Deployment Instructions
 
 ### Backend Deployment (Heroku)

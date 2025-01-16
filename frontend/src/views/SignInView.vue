@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
 import { useRouter } from 'vue-router'
+import Logo from '../components/Logo.vue'
 
 const email = ref(''),
    password = ref(''),
@@ -59,7 +60,7 @@ const signIn = async () => {
          @submit.prevent="signIn"
          class="container flex flex-col items-center gap-4 h-full py-10"
       >
-         <img src="/icon.png" alt="" class="scale-50" />
+         <Logo width="96px" height="96px" />
          <div class="capitalize text-3xl">Please Sign In</div>
          <div class="signin-dimensions flex flex-col">
             <input
@@ -94,7 +95,9 @@ const signIn = async () => {
             {{ errMsg }}
          </div>
          <footer class="absolute bottom-0 right-0 p-10">
-            <p class="opacity-50">Codeway &copy; {{ date.getFullYear() }}</p>
+            <p class="opacity-50">
+               Configuration Management System &copy; {{ date.getFullYear() }}
+            </p>
          </footer>
       </form>
    </div>

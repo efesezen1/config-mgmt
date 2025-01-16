@@ -1,7 +1,7 @@
 {
   "name": "case-study-backend",
   "version": "1.0.0",
-  "description": "Codeway case study server side application",
+  "description": "Configuration Management System Backend",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

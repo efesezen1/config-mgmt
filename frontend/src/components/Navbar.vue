@@ -2,7 +2,7 @@
   <nav
       class="border-b border-b-slate-800 w-full h-10 flex justify-between items-center px-6 py-7"
   >
-    <img src="/icon.png" alt="" class="w-10 h-auto"/>
+    <Logo />
     <button
         type="button"
         id="profile_btn"
@@ -39,7 +39,7 @@ import {onMounted, onUnmounted, ref} from 'vue'
 import {getAuth, signOut} from 'firebase/auth'
 import {getCurrentUser} from '../utils'
 import {useRouter} from 'vue-router'
-
+import Logo from './Logo.vue'
 const router = useRouter(),
     mail = ref(''),
     auth = getAuth(),
@@ -76,4 +76,12 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', closeMenuOnClickOutside)
 })
+</script>
+
+<script>
+export default {
+  components: {
+    Logo
+  }
+}
 </script>
